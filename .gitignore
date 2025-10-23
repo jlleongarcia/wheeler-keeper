@@ -112,6 +112,15 @@ dmypy.json
 # Media files
 /media/
 
+# Backups
+/backups/
+*.sql
+*.sql.gz
+*.dump
+*.backup
+backup_*.sql*
+wheeler_keeper_backup_*
+
 # IDE
 .vscode/
 .idea/

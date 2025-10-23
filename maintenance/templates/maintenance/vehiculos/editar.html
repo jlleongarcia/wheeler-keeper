@@ -1,0 +1,172 @@
+{% extends 'maintenance/base.html' %}
+
+{% block title %}Editar {{ vehiculo.nombre_completo }} - Wheeler Keeper{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center mb-4">
+                    <a href="{% url 'maintenance:detalle_vehiculo' vehiculo.id %}" class="btn btn-outline-secondary me-3">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <h1 class="h2 mb-0">
+                        <i class="bi bi-pencil text-primary"></i>
+                        Editar Vehículo
+                    </h1>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">{{ vehiculo.nombre_completo }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            
+                            <div class="row">
+                                <!-- Tipo de vehículo -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.tipo.id_for_label }}" class="form-label">
+                                        <i class="bi bi-car-front"></i>
+                                        Tipo de Vehículo *
+                                    </label>
+                                    {{ form.tipo }}
+                                    {% if form.tipo.errors %}
+                                        <div class="text-danger small">
+                                            {{ form.tipo.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Marca -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.marca.id_for_label }}" class="form-label">
+                                        <i class="bi bi-building"></i>
+                                        Marca *
+                                    </label>
+                                    {{ form.marca }}
+                                    {% if form.marca.errors %}
+                                        <div class="text-danger small">
+                                            {{ form.marca.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- Modelo -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.modelo.id_for_label }}" class="form-label">
+                                        <i class="bi bi-tag"></i>
+                                        Modelo *
+                                    </label>
+                                    {{ form.modelo }}
+                                    {% if form.modelo.errors %}
+                                        <div class="text-danger small">
+                                            {{ form.modelo.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Año -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.año.id_for_label }}" class="form-label">
+                                        <i class="bi bi-calendar"></i>
+                                        Año de Fabricación
+                                    </label>
+                                    {{ form.año }}
+                                    {% if form.año.errors %}
+                                        <div class="text-danger small">
+                                            {{ form.año.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- Matrícula -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.matricula.id_for_label }}" class="form-label">
+                                        <i class="bi bi-credit-card-2-front"></i>
+                                        Matrícula
+                                    </label>
+                                    {{ form.matricula }}
+                                    {% if form.matricula.errors %}
+                                        <div class="text-danger small">
+                                            {{ form.matricula.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Opcional</div>
+                                </div>
+
+                                <!-- Kilometraje -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.kilometraje_actual.id_for_label }}" class="form-label">
+                                        <i class="bi bi-speedometer"></i>
+                                        Kilometraje Actual *
+                                    </label>
+                                    {{ form.kilometraje_actual }}
+                                    {% if form.kilometraje_actual.errors %}
+                                        <div class="text-danger small">
+                                            {{ form.kilometraje_actual.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+                            
+                            <!-- Información adicional -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar-plus"></i>
+                                        Registrado: {{ vehiculo.fecha_creacion|date:"d/m/Y H:i" }}
+                                    </small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <i class="bi bi-pencil"></i>
+                                        Última actualización: {{ vehiculo.fecha_actualizacion|date:"d/m/Y H:i" }}
+                                    </small>
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+                            
+                            <!-- Botones -->
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'maintenance:detalle_vehiculo' vehiculo.id %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i>
+                                    Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i>
+                                    Guardar Cambios
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Información adicional -->
+                <div class="card mt-4 bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="bi bi-info-circle text-primary"></i>
+                            Información
+                        </h6>
+                        <ul class="mb-0 small">
+                            <li>Los campos marcados con * son obligatorios</li>
+                            <li>Los cambios se guardarán inmediatamente al hacer clic en "Guardar Cambios"</li>
+                            <li>Puedes cancelar en cualquier momento sin guardar los cambios</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

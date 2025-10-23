@@ -24,6 +24,31 @@
         .navbar-brand {
             font-weight: bold;
         }
+        
+        /* Asegurar que el dropdown del usuario quede dentro de la pantalla */
+        .dropdown-menu {
+            border: 1px solid #dee2e6;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        .dropdown-menu-end {
+            --bs-position: end;
+        }
+        
+        /* Para pantallas pequeñas, ajustar el dropdown */
+        @media (max-width: 767px) {
+            .dropdown-menu-end {
+                right: 0 !important;
+                left: auto !important;
+                transform: none !important;
+            }
+        }
+        
+        /* Asegurar que el dropdown no se salga de la ventana */
+        .dropdown-menu {
+            max-width: calc(100vw - 20px);
+            overflow: hidden;
+        }
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -61,7 +86,7 @@
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-person-circle"></i> {{ user.username }}
                             </a>
-                            <ul class="dropdown-menu">
+                            <ul class="dropdown-menu dropdown-menu-end">
                                 {% if user.is_staff %}
                                     <li><a class="dropdown-item" href="/admin/" target="_blank">
                                         <i class="bi bi-gear"></i> Panel Admin
@@ -110,6 +135,26 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Ajustar posición del dropdown del usuario para evitar desbordamiento
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            
+            dropdowns.forEach(function(dropdown) {
+                dropdown.addEventListener('show.bs.dropdown', function() {
+                    const dropdownMenu = this.querySelector('.dropdown-menu');
+                    const rect = dropdownMenu.getBoundingClientRect();
+                    const viewportWidth = window.innerWidth;
+                    
+                    // Si el dropdown se sale por la derecha, añadir clase para alinearlo a la derecha
+                    if (rect.right > viewportWidth) {
+                        dropdownMenu.classList.add('dropdown-menu-end');
+                    }
+                });
+            });
+        });
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>

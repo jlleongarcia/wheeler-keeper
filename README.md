@@ -135,6 +135,41 @@ DB_PORT=5432
 - **Execute commands in web container**: `docker-compose exec web <command>`
 - **Rebuild containers**: `docker-compose up --build`
 
+## Base de Datos y Backups
+
+### Ubicación de la Base de Datos
+La base de datos PostgreSQL se almacena en un volumen de Docker llamado `wheeler-keeper_postgres_data`. 
+Los datos están físicamente en: `/var/lib/docker/volumes/wheeler-keeper_postgres_data/_data`
+
+### Hacer Backup
+```bash
+# Crear backup automático
+./backup.sh
+```
+
+El script:
+- ✅ Crea un backup SQL usando `pg_dump`
+- ✅ Comprime el archivo automáticamente
+- ✅ Mantiene los últimos 10 backups
+- ✅ Guarda los backups en `./backups/`
+
+### Restaurar Backup
+```bash
+# Restaurar desde un backup específico
+./restore.sh backups/wheeler_keeper_backup_YYYYMMDD_HHMMSS.sql.gz
+```
+
+⚠️ **ADVERTENCIA**: La restauración elimina todos los datos actuales.
+
+### Backup Manual (Alternativo)
+```bash
+# Crear backup manual
+docker-compose exec db pg_dump -U wheeler_keeper_user wheeler_keeper_db > backup.sql
+
+# Restaurar backup manual
+cat backup.sql | docker-compose exec -T db psql -U wheeler_keeper_user -d wheeler_keeper_db
+```
+
 ## Database
 
 The application uses PostgreSQL in production/Docker environment. The database configuration is handled through environment variables for security and flexibility.

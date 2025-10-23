@@ -1,0 +1,124 @@
+{% extends 'maintenance/base.html' %}
+
+{% block title %}Eliminar {{ vehiculo.nombre_completo }} - Wheeler Keeper{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center mb-4">
+                    <a href="{% url 'maintenance:detalle_vehiculo' vehiculo.id %}" class="btn btn-outline-secondary me-3">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <h1 class="h2 mb-0">
+                        <i class="bi bi-exclamation-triangle text-danger"></i>
+                        Eliminar Vehículo
+                    </h1>
+                </div>
+
+                <div class="card shadow-sm border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Confirmación Requerida
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <i class="bi bi-car-front text-danger" style="font-size: 4rem;"></i>
+                        </div>
+
+                        <h5 class="text-center mb-3">¿Estás seguro de que deseas eliminar este vehículo?</h5>
+                        
+                        <!-- Información del vehículo -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-info-circle text-primary"></i>
+                                    Datos del Vehículo
+                                </h6>
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-4">Tipo:</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="badge bg-primary">{{ vehiculo.get_tipo_display }}</span>
+                                    </dd>
+
+                                    <dt class="col-sm-4">Marca:</dt>
+                                    <dd class="col-sm-8">{{ vehiculo.marca }}</dd>
+
+                                    <dt class="col-sm-4">Modelo:</dt>
+                                    <dd class="col-sm-8">{{ vehiculo.modelo }}</dd>
+
+                                    {% if vehiculo.año %}
+                                        <dt class="col-sm-4">Año:</dt>
+                                        <dd class="col-sm-8">{{ vehiculo.año }}</dd>
+                                    {% endif %}
+
+                                    {% if vehiculo.matricula %}
+                                        <dt class="col-sm-4">Matrícula:</dt>
+                                        <dd class="col-sm-8">{{ vehiculo.matricula }}</dd>
+                                    {% endif %}
+
+                                    <dt class="col-sm-4">Kilometraje:</dt>
+                                    <dd class="col-sm-8">{{ vehiculo.kilometraje_actual|floatformat:0 }} km</dd>
+                                </dl>
+                            </div>
+                        </div>
+
+                        <!-- Advertencia -->
+                        <div class="alert alert-danger">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                ¡Atención!
+                            </h6>
+                            <p class="mb-0">
+                                Esta acción <strong>no se puede deshacer</strong>. 
+                                Se eliminarán todos los registros de mantenimiento 
+                                asociados a este vehículo.
+                            </p>
+                        </div>
+
+                        <!-- Formulario de confirmación -->
+                        <form method="post" class="text-center">
+                            {% csrf_token %}
+                            
+                            <div class="d-flex justify-content-center gap-3">
+                                <a href="{% url 'maintenance:detalle_vehiculo' vehiculo.id %}" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i>
+                                    No, Cancelar
+                                </a>
+                                
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="bi bi-trash"></i>
+                                    Sí, Eliminar Definitivamente
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Información adicional -->
+                <div class="card mt-4 bg-light">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">
+                            <i class="bi bi-lightbulb text-warning"></i>
+                            Alternativa
+                        </h6>
+                        <p class="mb-2">
+                            Si solo quieres actualizar la información del vehículo, 
+                            puedes usar la función de edición en lugar de eliminarlo.
+                        </p>
+                        <a href="{% url 'maintenance:editar_vehiculo' vehiculo.id %}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-pencil"></i>
+                            Editar Vehículo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
