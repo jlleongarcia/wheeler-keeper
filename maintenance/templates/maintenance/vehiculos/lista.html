@@ -1,0 +1,86 @@
+{% extends 'maintenance/base.html' %}
+
+{% block title %}Mis Vehículos - Wheeler Keeper{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">
+                <i class="bi bi-car-front text-primary"></i>
+                Mis Vehículos
+            </h1>
+            <a href="{% url 'maintenance:agregar_vehiculo' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i>
+                Agregar Vehículo
+            </a>
+        </div>
+
+        {% if not vehiculos %}
+            <div class="text-center py-5">
+                <i class="bi bi-car-front text-muted mb-3" style="font-size: 4rem;"></i>
+                <h3 class="text-muted">No tienes vehículos registrados</h3>
+                <p class="text-muted mb-4">Comienza agregando tu primer vehículo</p>
+                <a href="{% url 'maintenance:agregar_vehiculo' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    Agregar Vehículo
+                </a>
+            </div>
+        {% else %}
+            <div class="row">
+                {% for vehiculo in vehiculos %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card vehicle-card shadow-sm h-100">
+                            <div class="card-header bg-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-primary">{{ vehiculo.get_tipo_display }}</span>
+                                    <small class="text-muted">{{ vehiculo.fecha_creacion|date:"d/m/Y" }}</small>
+                                </div>
+                            </div>
+                            
+                            <div class="card-body">
+                                <h5 class="card-title">{{ vehiculo.marca }} {{ vehiculo.modelo }}</h5>
+                                
+                                <div class="mb-2">
+                                    {% if vehiculo.año %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar"></i> {{ vehiculo.año }}
+                                        </small>
+                                    {% endif %}
+                                    
+                                    {% if vehiculo.matricula %}
+                                        <br>
+                                        <small class="text-muted">
+                                            <i class="bi bi-credit-card-2-front"></i> {{ vehiculo.matricula }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-speedometer"></i>
+                                        {{ vehiculo.kilometraje_actual|floatformat:0 }} km
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="card-footer bg-transparent">
+                                <div class="btn-group w-100" role="group">
+                                    <a href="{% url 'maintenance:detalle_vehiculo' vehiculo.id %}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye"></i> Ver
+                                    </a>
+                                    <a href="{% url 'maintenance:editar_vehiculo' vehiculo.id %}" 
+                                       class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-pencil"></i> Editar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

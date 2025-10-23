@@ -1,0 +1,155 @@
+{% extends 'maintenance/base.html' %}
+
+{% block title %}{{ vehiculo.nombre_completo }} - Wheeler Keeper{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="container">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{% url 'maintenance:lista_vehiculos' %}" class="btn btn-outline-secondary me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <h1 class="h2 mb-0">{{ vehiculo.nombre_completo }}</h1>
+        </div>
+
+        <div class="row">
+            <!-- Información del vehículo -->
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle"></i>
+                            Información del Vehículo
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <dl>
+                                    <dt><i class="bi bi-car-front text-primary"></i> Tipo</dt>
+                                    <dd class="mb-3">
+                                        <span class="badge bg-primary">{{ vehiculo.get_tipo_display }}</span>
+                                    </dd>
+
+                                    <dt><i class="bi bi-building text-primary"></i> Marca</dt>
+                                    <dd class="mb-3">{{ vehiculo.marca }}</dd>
+
+                                    <dt><i class="bi bi-tag text-primary"></i> Modelo</dt>
+                                    <dd class="mb-3">{{ vehiculo.modelo }}</dd>
+                                </dl>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <dl>
+                                    {% if vehiculo.año %}
+                                        <dt><i class="bi bi-calendar text-primary"></i> Año</dt>
+                                        <dd class="mb-3">{{ vehiculo.año }}</dd>
+                                    {% endif %}
+
+                                    {% if vehiculo.matricula %}
+                                        <dt><i class="bi bi-credit-card-2-front text-primary"></i> Matrícula</dt>
+                                        <dd class="mb-3">{{ vehiculo.matricula }}</dd>
+                                    {% endif %}
+
+                                    <dt><i class="bi bi-speedometer text-primary"></i> Kilometraje</dt>
+                                    <dd class="mb-3">{{ vehiculo.kilometraje_actual|floatformat:0 }} km</dd>
+                                </dl>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-plus"></i>
+                                    Registrado: {{ vehiculo.fecha_creacion|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-pencil"></i>
+                                    Actualizado: {{ vehiculo.fecha_actualizacion|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-gear"></i>
+                            Acciones
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'maintenance:editar_vehiculo' vehiculo.id %}" 
+                               class="btn btn-primary">
+                                <i class="bi bi-pencil"></i>
+                                Editar Vehículo
+                            </a>
+                            
+                            <button type="button" class="btn btn-outline-danger" 
+                                    data-bs-toggle="modal" data-bs-target="#eliminarModal">
+                                <i class="bi bi-trash"></i>
+                                Eliminar Vehículo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Próximos mantenimientos (placeholder) -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-calendar-check"></i>
+                            Próximos Mantenimientos
+                        </h6>
+                    </div>
+                    <div class="card-body text-center text-muted">
+                        <i class="bi bi-wrench" style="font-size: 2rem;"></i>
+                        <p class="mt-2 mb-0">Próximamente disponible</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para eliminar -->
+<div class="modal fade" id="eliminarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle text-warning"></i>
+                    Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar el vehículo <strong>{{ vehiculo.nombre_completo }}</strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Esta acción no se puede deshacer y se eliminarán todos los registros de mantenimiento asociados.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <a href="{% url 'maintenance:eliminar_vehiculo' vehiculo.id %}" 
+                   class="btn btn-danger">
+                    <i class="bi bi-trash"></i>
+                    Sí, Eliminar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
