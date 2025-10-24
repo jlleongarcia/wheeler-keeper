@@ -1,0 +1,78 @@
+{% extends 'maintenance/base.html' %}
+
+{% block title %}Eliminar Mantenimiento - Wheeler Keeper{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0 text-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Eliminar Mantenimiento
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>¿Estás seguro?</strong> Esta acción no se puede deshacer.
+                    </div>
+                    
+                    <div class="bg-light p-3 rounded mb-4">
+                        <h5>{{ mantenimiento.tipo_mantenimiento.nombre }}</h5>
+                        <div class="row text-sm">
+                            <div class="col-6">
+                                <strong>Vehículo:</strong><br>
+                                {{ mantenimiento.vehiculo }}
+                            </div>
+                            <div class="col-6">
+                                <strong>Fecha:</strong><br>
+                                {{ mantenimiento.fecha_realizacion }}
+                            </div>
+                            <div class="col-6 mt-2">
+                                <strong>Kilometraje:</strong><br>
+                                {{ mantenimiento.kilometraje_realizacion|floatformat:0 }} km
+                            </div>
+                            <div class="col-6 mt-2">
+                                {% if mantenimiento.costo %}
+                                    <strong>Costo:</strong><br>
+                                    {{ mantenimiento.costo|floatformat:2 }} €
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if mantenimiento.taller %}
+                            <div class="mt-2">
+                                <strong>Taller:</strong> {{ mantenimiento.taller }}
+                            </div>
+                        {% endif %}
+                        {% if mantenimiento.notas %}
+                            <div class="mt-2">
+                                <strong>Notas:</strong><br>
+                                <small class="text-muted">{{ mantenimiento.notas|truncatewords:20 }}</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <form method="post" class="text-end">
+                        {% csrf_token %}
+                        <a href="{% url 'maintenance:detalle_mantenimiento' mantenimiento.id %}" class="btn btn-secondary me-2">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Sí, Eliminar Mantenimiento
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.text-sm {
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}

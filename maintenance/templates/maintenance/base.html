@@ -82,6 +82,23 @@
                             <i class="bi bi-car-front"></i> Mis Vehículos
                         </a>
                     </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-tools"></i> Mantenimiento
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'maintenance:agregar_mantenimiento' %}">
+                                <i class="bi bi-plus-circle"></i> Registrar Mantenimiento
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'maintenance:lista_mantenimientos' %}">
+                                <i class="bi bi-list-ul"></i> Historial Mantenimientos
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'maintenance:proximos_mantenimientos' %}">
+                                <i class="bi bi-exclamation-triangle text-warning"></i> Próximos Vencimientos
+                            </a></li>
+                        </ul>
+                    </li>
                 </ul>
                 
                 <ul class="navbar-nav">

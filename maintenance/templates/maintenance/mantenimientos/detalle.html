@@ -1,0 +1,178 @@
+{% extends 'maintenance/base.html' %}
+
+{% block title %}{{ mantenimiento.tipo_mantenimiento.nombre }} - Wheeler Keeper{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <!-- Botones de acción -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <a href="{% url 'maintenance:lista_mantenimientos' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver al Historial
+                </a>
+                <div class="btn-group">
+                    <a href="{% url 'maintenance:editar_mantenimiento' mantenimiento.id %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a href="{% url 'maintenance:eliminar_mantenimiento' mantenimiento.id %}" class="btn btn-outline-danger">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Información del mantenimiento -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">
+                            <span class="badge bg-primary me-2">
+                                {{ mantenimiento.tipo_mantenimiento.get_categoria_display }}
+                            </span>
+                            {{ mantenimiento.tipo_mantenimiento.nombre }}
+                        </h3>
+                        {% if es_proximo %}
+                            <span class="badge bg-warning text-dark fs-6">
+                                <i class="bi bi-exclamation-triangle"></i> {{ mensaje_alerta }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Información del vehículo -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5><i class="bi bi-car-front"></i> Vehículo</h5>
+                            <div class="bg-light p-3 rounded">
+                                <h6 class="mb-2">{{ mantenimiento.vehiculo }}</h6>
+                                <div class="row text-sm">
+                                    <div class="col-md-6">
+                                        <strong>Tipo:</strong> {{ mantenimiento.vehiculo.get_tipo_display }}<br>
+                                        {% if mantenimiento.vehiculo.año %}
+                                            <strong>Año:</strong> {{ mantenimiento.vehiculo.año }}<br>
+                                        {% endif %}
+                                        {% if mantenimiento.vehiculo.matricula %}
+                                            <strong>Matrícula:</strong> {{ mantenimiento.vehiculo.matricula }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Kilometraje actual:</strong> {{ mantenimiento.vehiculo.kilometraje_actual|floatformat:0 }} km
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detalles del mantenimiento -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5><i class="bi bi-calendar-check"></i> Detalles del Mantenimiento</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Fecha de realización:</strong></td>
+                                    <td>{{ mantenimiento.fecha_realizacion }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Kilometraje:</strong></td>
+                                    <td>{{ mantenimiento.kilometraje_realizacion|floatformat:0 }} km</td>
+                                </tr>
+                                {% if mantenimiento.costo %}
+                                <tr>
+                                    <td><strong>Costo:</strong></td>
+                                    <td>{{ mantenimiento.costo|floatformat:2 }} €</td>
+                                </tr>
+                                {% endif %}
+                                {% if mantenimiento.taller %}
+                                <tr>
+                                    <td><strong>Taller:</strong></td>
+                                    <td>{{ mantenimiento.taller }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5><i class="bi bi-clock"></i> Próximo Mantenimiento</h5>
+                            <div class="bg-light p-3 rounded">
+                                {% if proximo_km or proxima_fecha %}
+                                    {% if proximo_km %}
+                                        <div class="mb-2">
+                                            <strong>Por kilometraje:</strong><br>
+                                            <span class="fs-5 text-primary">{{ proximo_km|floatformat:0 }} km</span>
+                                            <br><small class="text-muted">
+                                                Faltan {{ proximo_km|add:mantenimiento.vehiculo.kilometraje_actual|add:"-"|floatformat:0 }} km
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                    {% if proxima_fecha %}
+                                        <div>
+                                            <strong>Por fecha:</strong><br>
+                                            <span class="fs-5 text-primary">{{ proxima_fecha }}</span>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="text-muted">
+                                        <i class="bi bi-info-circle"></i>
+                                        No hay intervalos definidos para este tipo de mantenimiento.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notas -->
+                    {% if mantenimiento.notas %}
+                        <div class="row">
+                            <div class="col-12">
+                                <h5><i class="bi bi-file-text"></i> Notas</h5>
+                                <div class="bg-light p-3 rounded">
+                                    {{ mantenimiento.notas|linebreaks }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-muted">
+                    <i class="bi bi-clock-history"></i>
+                    Registrado el {{ mantenimiento.fecha_creacion|date:"d/m/Y à\s H:i" }}
+                </div>
+            </div>
+            
+            <!-- Información del tipo de mantenimiento -->
+            {% if mantenimiento.tipo_mantenimiento.descripcion %}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle"></i> Sobre este tipo de mantenimiento
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p>{{ mantenimiento.tipo_mantenimiento.descripcion }}</p>
+                        <div class="row text-sm">
+                            {% if mantenimiento.tipo_mantenimiento.intervalo_km > 0 %}
+                                <div class="col-md-6">
+                                    <strong>Intervalo recomendado:</strong><br>
+                                    Cada {{ mantenimiento.tipo_mantenimiento.intervalo_km|floatformat:0 }} km
+                                </div>
+                            {% endif %}
+                            {% if mantenimiento.tipo_mantenimiento.intervalo_meses > 0 %}
+                                <div class="col-md-6">
+                                    <strong>Intervalo temporal:</strong><br>
+                                    Cada {{ mantenimiento.tipo_mantenimiento.intervalo_meses }} meses
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.text-sm {
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}

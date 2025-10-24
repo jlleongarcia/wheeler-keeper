@@ -1,0 +1,201 @@
+{% extends 'maintenance/base.html' %}
+
+{% block title %}Registrar Mantenimiento - Wheeler Keeper{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-plus-circle"></i> Registrar Nuevo Mantenimiento
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="maintenanceForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.vehiculo.id_for_label }}" class="form-label">Vehículo *</label>
+                                    {{ form.vehiculo }}
+                                    {% if form.vehiculo.errors %}
+                                        <div class="text-danger">{{ form.vehiculo.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.tipo_mantenimiento.id_for_label }}" class="form-label">Tipo de Mantenimiento *</label>
+                                    {{ form.tipo_mantenimiento }}
+                                    {% if form.tipo_mantenimiento.errors %}
+                                        <div class="text-danger">{{ form.tipo_mantenimiento.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.fecha_realizacion.id_for_label }}" class="form-label">Fecha de Realización *</label>
+                                    {{ form.fecha_realizacion }}
+                                    {% if form.fecha_realizacion.errors %}
+                                        <div class="text-danger">{{ form.fecha_realizacion.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.kilometraje_realizacion.id_for_label }}" class="form-label">Kilometraje *</label>
+                                    <div class="input-group">
+                                        {{ form.kilometraje_realizacion }}
+                                        <span class="input-group-text">km</span>
+                                    </div>
+                                    {% if form.kilometraje_realizacion.errors %}
+                                        <div class="text-danger">{{ form.kilometraje_realizacion.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.costo.id_for_label }}" class="form-label">Costo</label>
+                                    <div class="input-group">
+                                        {{ form.costo }}
+                                        <span class="input-group-text">€</span>
+                                    </div>
+                                    {% if form.costo.errors %}
+                                        <div class="text-danger">{{ form.costo.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.taller.id_for_label }}" class="form-label">Taller/Lugar</label>
+                                    {{ form.taller }}
+                                    {% if form.taller.errors %}
+                                        <div class="text-danger">{{ form.taller.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.notas.id_for_label }}" class="form-label">Notas</label>
+                            {{ form.notas }}
+                            {% if form.notas.errors %}
+                                <div class="text-danger">{{ form.notas.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="text-end">
+                            <a href="{% url 'maintenance:lista_mantenimientos' %}" class="btn btn-secondary me-2">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Registrar Mantenimiento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Info del tipo de mantenimiento seleccionado -->
+<div class="container mt-3" id="maintenanceInfo" style="display: none;">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="alert alert-info">
+                <h6><i class="bi bi-info-circle"></i> Información del Mantenimiento</h6>
+                <div id="maintenanceDetails"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const vehiculoSelect = document.getElementById('{{ form.vehiculo.id_for_label }}');
+    const tipoSelect = document.getElementById('{{ form.tipo_mantenimiento.id_for_label }}');
+    const maintenanceInfo = document.getElementById('maintenanceInfo');
+    const maintenanceDetails = document.getElementById('maintenanceDetails');
+    
+    // Actualizar tipos de mantenimiento cuando cambie el vehículo
+    vehiculoSelect.addEventListener('change', function() {
+        const vehiculoId = this.value;
+        if (vehiculoId) {
+            fetch(`{% url 'maintenance:api_tipos_mantenimiento' %}?vehiculo_id=${vehiculoId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Limpiar opciones actuales
+                    tipoSelect.innerHTML = '<option value="">---------</option>';
+                    
+                    // Añadir nuevas opciones agrupadas por categoría
+                    let currentCategory = '';
+                    data.tipos.forEach(tipo => {
+                        if (tipo.categoria !== currentCategory) {
+                            if (currentCategory !== '') {
+                                tipoSelect.appendChild(document.createElement('optgroup')).label = tipo.categoria;
+                            }
+                            currentCategory = tipo.categoria;
+                        }
+                        
+                        const option = document.createElement('option');
+                        option.value = tipo.id;
+                        option.textContent = tipo.nombre;
+                        option.dataset.intervalKm = tipo.intervalo_km;
+                        option.dataset.intervalMeses = tipo.intervalo_meses;
+                        tipoSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error al cargar tipos de mantenimiento:', error);
+                });
+        } else {
+            tipoSelect.innerHTML = '<option value="">---------</option>';
+            maintenanceInfo.style.display = 'none';
+        }
+    });
+    
+    // Mostrar información del tipo de mantenimiento
+    tipoSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const intervalKm = selectedOption.dataset.intervalKm;
+            const intervalMeses = selectedOption.dataset.intervalMeses;
+            
+            let info = '<strong>Intervalos recomendados:</strong><br>';
+            if (intervalKm > 0) {
+                info += `• Cada ${intervalKm.toLocaleString()} kilómetros<br>`;
+            }
+            if (intervalMeses > 0) {
+                info += `• Cada ${intervalMeses} meses<br>`;
+            }
+            if (intervalKm == 0 && intervalMeses == 0) {
+                info += '• Sin intervalo predefinido (según necesidad)';
+            }
+            
+            maintenanceDetails.innerHTML = info;
+            maintenanceInfo.style.display = 'block';
+        } else {
+            maintenanceInfo.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

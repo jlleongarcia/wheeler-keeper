@@ -75,10 +75,115 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Intervalos de Mantenimiento Personalizados -->
+                {% if intervalos_personalizados %}
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clock"></i>
+                                Intervalos Personalizados
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Mantenimiento</th>
+                                            <th>Kilómetros</th>
+                                            <th>Meses</th>
+                                            <th>Notas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for intervalo in intervalos_personalizados %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ intervalo.tipo_mantenimiento.nombre }}</strong>
+                                                    <br><small class="text-muted">{{ intervalo.tipo_mantenimiento.get_categoria_display }}</small>
+                                                </td>
+                                                <td>
+                                                    {% if intervalo.get_intervalo_km > 0 %}
+                                                        {{ intervalo.get_intervalo_km|floatformat:0 }} km
+                                                        {% if intervalo.intervalo_km_personalizado > 0 %}
+                                                            <small class="text-info">(personalizado)</small>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="text-muted">No aplica</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if intervalo.get_intervalo_meses > 0 %}
+                                                        {{ intervalo.get_intervalo_meses }} meses
+                                                        {% if intervalo.intervalo_meses_personalizado > 0 %}
+                                                            <small class="text-info">(personalizado)</small>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="text-muted">No aplica</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if intervalo.notas %}
+                                                        <small class="text-muted">{{ intervalo.notas|truncatewords:8 }}</small>
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-end mt-3">
+                                <a href="/admin/maintenance/intervalomantenimiento/" 
+                                   class="btn btn-outline-info btn-sm" 
+                                   target="_blank">
+                                    <i class="bi bi-gear"></i> Gestionar Intervalos
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Últimos Mantenimientos -->
+                {% if ultimos_mantenimientos %}
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clock-history"></i>
+                                Últimos Mantenimientos
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% for mantenimiento in ultimos_mantenimientos %}
+                                <div class="d-flex justify-content-between align-items-center py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                                    <div>
+                                        <strong>{{ mantenimiento.tipo_mantenimiento.nombre }}</strong>
+                                        <br><small class="text-muted">
+                                            {{ mantenimiento.fecha_realizacion }} • {{ mantenimiento.kilometraje_realizacion|floatformat:0 }} km
+                                            {% if mantenimiento.costo %} • {{ mantenimiento.costo|floatformat:2 }} €{% endif %}
+                                        </small>
+                                    </div>
+                                    <a href="{% url 'maintenance:detalle_mantenimiento' mantenimiento.id %}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </div>
+                            {% endfor %}
+                            <div class="text-end mt-3">
+                                <a href="{% url 'maintenance:lista_mantenimientos' %}?vehiculo={{ vehiculo.id }}" 
+                                   class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-list"></i> Ver Historial Completo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
 
             <!-- Acciones -->
-            <div class="col-md-4">
+            <div class="col-md-4">'
                 <div class="card shadow-sm">
                     <div class="card-header">
                         <h6 class="mb-0">
@@ -92,6 +197,20 @@
                                class="btn btn-primary">
                                 <i class="bi bi-pencil"></i>
                                 Editar Vehículo
+                            </a>
+                            
+                            <a href="{% url 'maintenance:agregar_mantenimiento' %}?vehiculo={{ vehiculo.id }}" 
+                               class="btn btn-success">
+                                <i class="bi bi-plus-circle"></i>
+                                Registrar Mantenimiento
+                            </a>
+                            
+                            <a href="/admin/maintenance/intervalomantenimiento/add/?vehiculo={{ vehiculo.id }}" 
+                               class="btn btn-outline-info" 
+                               target="_blank"
+                               title="Personalizar intervalos de mantenimiento">
+                                <i class="bi bi-clock"></i>
+                                Personalizar Intervalos
                             </a>
                             
                             <button type="button" class="btn btn-outline-danger" 

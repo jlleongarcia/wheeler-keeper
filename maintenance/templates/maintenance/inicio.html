@@ -67,6 +67,34 @@
                         </div>
                     </div>
 
+                    <!-- Alertas de mantenimiento -->
+                    {% if mantenimientos_proximos %}
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="alert alert-warning">
+                                    <h5 class="alert-heading">
+                                        <i class="bi bi-exclamation-triangle"></i> Mantenimientos Próximos
+                                    </h5>
+                                    <p class="mb-3">Tienes mantenimientos que están próximos a vencer:</p>
+                                    <div class="row">
+                                        {% for item in mantenimientos_proximos %}
+                                            <div class="col-md-6 mb-2">
+                                                <div class="bg-light p-2 rounded">
+                                                    <strong>{{ item.registro.tipo_mantenimiento.nombre }}</strong><br>
+                                                    <small class="text-muted">{{ item.vehiculo }} - {{ item.mensaje }}</small>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                    <hr>
+                                    <a href="{% url 'maintenance:proximos_mantenimientos' %}" class="btn btn-warning">
+                                        <i class="bi bi-eye"></i> Ver Todas las Alertas
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
                     <!-- Lista de vehículos -->
                     <h3 class="mb-3">
                         <i class="bi bi-list-ul text-primary"></i>
@@ -111,15 +139,19 @@
                                     </div>
                                     
                                     <div class="card-footer bg-transparent">
-                                        <div class="btn-group w-100" role="group">
-                                            <a href="{% url 'maintenance:detalle_vehiculo' vehiculo.id %}" 
-                                               class="btn btn-outline-primary btn-sm">
-                                                <i class="bi bi-eye"></i> Ver
-                                            </a>
-                                            <a href="{% url 'maintenance:editar_vehiculo' vehiculo.id %}" 
-                                               class="btn btn-outline-secondary btn-sm">
-                                                <i class="bi bi-pencil"></i> Editar
-                                            </a>
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <a href="{% url 'maintenance:detalle_vehiculo' vehiculo.id %}" 
+                                                   class="btn btn-outline-primary btn-sm w-100">
+                                                    <i class="bi bi-eye"></i> Ver
+                                                </a>
+                                            </div>
+                                            <div class="col-6">
+                                                <a href="{% url 'maintenance:agregar_mantenimiento' %}?vehiculo={{ vehiculo.id }}" 
+                                                   class="btn btn-success btn-sm w-100" title="Registrar mantenimiento">
+                                                    <i class="bi bi-tools"></i> Mantener
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -134,6 +166,51 @@
                                 <i class="bi bi-list"></i>
                                 Ver Todos los Vehículos
                             </a>
+                        </div>
+                    {% endif %}
+
+                    <!-- Últimos mantenimientos -->
+                    {% if ultimos_mantenimientos %}
+                        <div class="row mt-5">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h3>
+                                        <i class="bi bi-clock-history text-primary"></i>
+                                        Últimos Mantenimientos
+                                    </h3>
+                                    <a href="{% url 'maintenance:lista_mantenimientos' %}" class="btn btn-outline-primary">
+                                        <i class="bi bi-list"></i> Ver Historial Completo
+                                    </a>
+                                </div>
+                                
+                                <div class="row">
+                                    {% for mantenimiento in ultimos_mantenimientos %}
+                                        <div class="col-md-6 col-lg-4 mb-3">
+                                            <div class="card border-0 shadow-sm h-100">
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <span class="badge bg-secondary">{{ mantenimiento.tipo_mantenimiento.get_categoria_display }}</span>
+                                                        <small class="text-muted">{{ mantenimiento.fecha_realizacion }}</small>
+                                                    </div>
+                                                    <h6 class="card-title">{{ mantenimiento.tipo_mantenimiento.nombre }}</h6>
+                                                    <p class="card-text text-muted small">
+                                                        <i class="bi bi-car-front"></i> {{ mantenimiento.vehiculo }}<br>
+                                                        <i class="bi bi-speedometer"></i> {{ mantenimiento.kilometraje_realizacion|floatformat:0 }} km
+                                                        {% if mantenimiento.costo %}
+                                                            <br><i class="bi bi-currency-euro"></i> {{ mantenimiento.costo|floatformat:2 }} €
+                                                        {% endif %}
+                                                    </p>
+                                                </div>
+                                                <div class="card-footer bg-transparent border-0 pt-0">
+                                                    <a href="{% url 'maintenance:detalle_mantenimiento' mantenimiento.id %}" class="btn btn-outline-primary btn-sm">
+                                                        <i class="bi bi-eye"></i> Ver Detalles
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         </div>
                     {% endif %}
                 {% endif %}

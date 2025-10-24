@@ -1,0 +1,129 @@
+{% extends 'maintenance/base.html' %}
+
+{% block title %}Próximos Mantenimientos - Wheeler Keeper{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-exclamation-triangle text-warning"></i> Próximos Vencimientos</h2>
+                <a href="{% url 'maintenance:agregar_mantenimiento' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Registrar Mantenimiento
+                </a>
+            </div>
+            
+            {% if mantenimientos_proximos %}
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Alertas de mantenimiento:</strong> Mantenimientos que están próximos a vencer (dentro de 1000 km o 30 días).
+                </div>
+                
+                <div class="row">
+                    {% for item in mantenimientos_proximos %}
+                        <div class="col-lg-6 mb-4">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning bg-opacity-25">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">
+                                            <i class="bi bi-exclamation-triangle text-warning"></i>
+                                            {{ item.registro.tipo_mantenimiento.nombre }}
+                                        </h5>
+                                        <span class="badge bg-warning text-dark">
+                                            {{ item.mensaje }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="bi bi-car-front"></i> {{ item.vehiculo }}
+                                    </h6>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <small class="text-muted">Último mantenimiento:</small><br>
+                                            <strong>{{ item.registro.fecha_realizacion }}</strong><br>
+                                            <small>{{ item.registro.kilometraje_realizacion|floatformat:0 }} km</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">Kilometraje actual:</small><br>
+                                            <strong>{{ item.vehiculo.kilometraje_actual|floatformat:0 }} km</strong>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        {% if item.proximo_km %}
+                                            <div class="col-6">
+                                                <div class="bg-light p-2 rounded">
+                                                    <small class="text-muted">Próximo por km:</small><br>
+                                                    <strong class="text-primary">{{ item.proximo_km|floatformat:0 }} km</strong>
+                                                    {% with faltante=item.proximo_km|add:item.vehiculo.kilometraje_actual|add:"-" %}
+                                                        <br><small class="text-muted">Faltan {{ faltante|floatformat:0 }} km</small>
+                                                    {% endwith %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        {% if item.proxima_fecha %}
+                                            <div class="col-6">
+                                                <div class="bg-light p-2 rounded">
+                                                    <small class="text-muted">Próximo por fecha:</small><br>
+                                                    <strong class="text-primary">{{ item.proxima_fecha }}</strong>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="bi bi-tag"></i> {{ item.registro.tipo_mantenimiento.get_categoria_display }}
+                                        </small>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'maintenance:detalle_mantenimiento' item.registro.id %}" 
+                                               class="btn btn-outline-primary" title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'maintenance:agregar_mantenimiento' %}?vehiculo={{ item.vehiculo.id }}" 
+                                               class="btn btn-success" title="Registrar nuevo mantenimiento">
+                                                <i class="bi bi-plus-circle"></i> Realizar
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="bi bi-check-circle" style="font-size: 4rem; color: #28a745;"></i>
+                    </div>
+                    <h4 class="text-success">¡Todo al día!</h4>
+                    <p class="text-muted mb-4">
+                        No tienes mantenimientos próximos a vencer. Todos tus vehículos están en regla.
+                    </p>
+                    <div class="row justify-content-center">
+                        <div class="col-auto">
+                            <a href="{% url 'maintenance:lista_mantenimientos' %}" class="btn btn-outline-primary me-2">
+                                <i class="bi bi-list-ul"></i> Ver Historial
+                            </a>
+                            <a href="{% url 'maintenance:agregar_mantenimiento' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Registrar Mantenimiento
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.bg-warning.bg-opacity-25 {
+    background-color: rgba(255, 193, 7, 0.25) !important;
+}
+</style>
+{% endblock %}
