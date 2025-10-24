@@ -18,6 +18,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
+from django.conf.urls.static import static
 
 def home_view(request):
     """Vista principal que redirige según el estado de autenticación"""
@@ -35,3 +37,8 @@ urlpatterns = [
     path('mantenimiento/', include('maintenance.urls')),
     path('', home_view, name='home'),
 ]
+
+# Servir archivos estáticos en desarrollo
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
