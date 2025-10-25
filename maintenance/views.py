@@ -348,6 +348,55 @@ def registro_usuario(request):
         if form.is_valid():
             # Guardar la solicitud de registro
             solicitud = form.save()
+            
+            # Enviar email de notificación al administrador
+            try:
+                from django.core.mail import send_mail
+                from django.conf import settings
+                from django.contrib.auth.models import User
+                
+                # Obtener email del usuario sa (administrador)
+                try:
+                    admin_user = User.objects.get(username='sa')
+                    admin_email = admin_user.email
+                    # Si el usuario sa no tiene email configurado, usar el de configuración
+                    if not admin_email:
+                        admin_email = settings.ADMIN_EMAIL
+                except User.DoesNotExist:
+                    # Si no existe usuario sa, usar email de configuración
+                    admin_email = settings.ADMIN_EMAIL
+                
+                subject = f'[Wheeler Keeper] Nueva solicitud de registro - {solicitud.username}'
+                message = f"""
+Hola Administrador,
+
+Se ha recibido una nueva solicitud de registro en Wheeler Keeper.
+
+Detalles del solicitante:
+- Nombre de usuario: {solicitud.username}
+- Nombre completo: {solicitud.first_name} {solicitud.last_name}
+- Email: {solicitud.email}
+- Fecha de solicitud: {solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M')}
+
+Para revisar y aprobar/rechazar esta solicitud, accede al panel de administración:
+http://100.86.241.113:8200/admin/maintenance/userregistrationrequest/
+
+¡Saludos!
+Wheeler Keeper
+                """
+                
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[admin_email],
+                    fail_silently=False,
+                )
+                
+            except Exception as e:
+                # Si falla el envío del email, log del error pero continúa
+                print(f"Error enviando email de notificación: {e}")
+            
             messages.success(
                 request, 
                 f'¡Solicitud de registro enviada exitosamente! Tu solicitud está pendiente de aprobación por el administrador. Te contactaremos a {solicitud.email} cuando sea procesada.'
