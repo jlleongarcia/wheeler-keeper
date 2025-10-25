@@ -48,6 +48,8 @@ urlpatterns = [
     ), name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
     
+    # URLs de registro (ya incluidas en maintenance.urls)
+    
     # Páginas principales
     path('home/', home_page_view, name='home_page'),
     path('', home_view, name='home'),

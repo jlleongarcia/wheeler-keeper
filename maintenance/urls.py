@@ -24,4 +24,8 @@ urlpatterns = [
     
     # API endpoints
     path('api/tipos-mantenimiento/', views.get_tipos_mantenimiento_json, name='api_tipos_mantenimiento'),
+    
+    # Registro de usuarios
+    path('registro/', views.registro_usuario, name='registro_usuario'),
+    path('registro/exitoso/', views.registro_exitoso, name='registro_exitoso'),
 ]

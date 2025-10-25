@@ -299,3 +299,137 @@ class FiltroMantenimientoForm(forms.Form):
             self.fields['vehiculo'].queryset = Vehiculo.objects.filter(
                 propietario=user
             )
+
+
+class UserRegistrationForm(forms.Form):
+    """Formulario para solicitudes de registro de usuarios"""
+    
+    username = forms.CharField(
+        max_length=150,
+        label="Nombre de usuario",
+        help_text="Requerido. 150 caracteres o menos. Únicamente letras, dígitos y @/./+/-/_ permitidos.",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ingresa tu nombre de usuario'
+        })
+    )
+    
+    email = forms.EmailField(
+        label="Correo electrónico",
+        help_text="Ingresa una dirección de correo válida.",
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'tu@email.com'
+        })
+    )
+    
+    first_name = forms.CharField(
+        max_length=30,
+        label="Nombre",
+        help_text="Tu nombre.",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Tu nombre'
+        })
+    )
+    
+    last_name = forms.CharField(
+        max_length=150,
+        label="Apellidos",
+        help_text="Tus apellidos.",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Tus apellidos'
+        })
+    )
+    
+    password1 = forms.CharField(
+        label="Contraseña",
+        help_text="Tu contraseña debe contener al menos 8 caracteres.",
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Contraseña'
+        })
+    )
+    
+    password2 = forms.CharField(
+        label="Confirmar contraseña",
+        help_text="Ingresa la misma contraseña que antes, para verificación.",
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Confirmar contraseña'
+        })
+    )
+    
+    def clean_username(self):
+        """Validar que el username no exista en usuarios activos ni en solicitudes pendientes"""
+        from django.contrib.auth.models import User
+        from .models import UserRegistrationRequest
+        
+        username = self.cleaned_data['username']
+        
+        # Verificar en usuarios existentes
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("Este nombre de usuario ya está en uso.")
+        
+        # Verificar en solicitudes pendientes
+        if UserRegistrationRequest.objects.filter(username=username, status='pendiente').exists():
+            raise forms.ValidationError("Ya existe una solicitud pendiente con este nombre de usuario.")
+        
+        return username
+    
+    def clean_email(self):
+        """Validar que el email no exista en usuarios activos ni en solicitudes pendientes"""
+        from django.contrib.auth.models import User
+        from .models import UserRegistrationRequest
+        
+        email = self.cleaned_data['email']
+        
+        # Verificar en usuarios existentes
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("Este correo electrónico ya está registrado.")
+        
+        # Verificar en solicitudes pendientes
+        if UserRegistrationRequest.objects.filter(email=email, status='pendiente').exists():
+            raise forms.ValidationError("Ya existe una solicitud pendiente con este correo electrónico.")
+        
+        return email
+    
+    def clean_password2(self):
+        """Validar que las contraseñas coincidan"""
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError("Las contraseñas no coinciden.")
+        
+        return password2
+    
+    def clean_password1(self):
+        """Validar la fortaleza de la contraseña"""
+        password = self.cleaned_data.get("password1")
+        
+        if len(password) < 8:
+            raise forms.ValidationError("La contraseña debe tener al menos 8 caracteres.")
+        
+        return password
+    
+    def save(self):
+        """Crear una nueva solicitud de registro"""
+        from django.contrib.auth.hashers import make_password
+        from .models import UserRegistrationRequest
+        
+        # Crear hash de la contraseña
+        password_hash = make_password(self.cleaned_data['password1'])
+        
+        # Crear la solicitud de registro
+        request = UserRegistrationRequest.objects.create(
+            username=self.cleaned_data['username'],
+            email=self.cleaned_data['email'],
+            first_name=self.cleaned_data['first_name'],
+            last_name=self.cleaned_data['last_name'],
+            password_hash=password_hash,
+            status='pendiente'
+        )
+        
+        return request

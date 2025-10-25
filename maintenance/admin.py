@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Vehiculo, TipoMantenimiento, IntervaloMantenimiento, RegistroMantenimiento
+from .models import Vehiculo, TipoMantenimiento, IntervaloMantenimiento, RegistroMantenimiento, UserRegistrationRequest
 
 
 @admin.register(Vehiculo)
@@ -195,8 +195,8 @@ class RegistroMantenimientoAdmin(admin.ModelAdmin):
             'fields': ('fecha_creacion',),
             'classes': ('collapse',)
         }),
-    )
-    
+        )
+
     def get_queryset(self, request):
         """Optimizar consultas con select_related"""
         return super().get_queryset(request).select_related(
@@ -204,3 +204,113 @@ class RegistroMantenimientoAdmin(admin.ModelAdmin):
             'tipo_mantenimiento',
             'vehiculo__propietario'
         )
+
+
+@admin.register(UserRegistrationRequest)
+class UserRegistrationRequestAdmin(admin.ModelAdmin):
+    """Administración de solicitudes de registro de usuarios"""
+    
+    list_display = [
+        'username', 
+        'first_name', 
+        'last_name', 
+        'email', 
+        'status', 
+        'fecha_solicitud',
+        'procesado_por'
+    ]
+    
+    list_filter = [
+        'status', 
+        'fecha_solicitud',
+        'fecha_procesado'
+    ]
+    
+    search_fields = [
+        'username', 
+        'email', 
+        'first_name', 
+        'last_name'
+    ]
+    
+    readonly_fields = [
+        'password_hash', 
+        'fecha_solicitud', 
+        'fecha_procesado'
+    ]
+    
+    fieldsets = (
+        ('Información del Usuario', {
+            'fields': ('username', 'email', 'first_name', 'last_name')
+        }),
+        ('Estado', {
+            'fields': ('status', 'notas')
+        }),
+        ('Información Técnica', {
+            'fields': ('password_hash',),
+            'classes': ('collapse',)
+        }),
+        ('Fechas', {
+            'fields': ('fecha_solicitud', 'fecha_procesado', 'procesado_por'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    actions = ['aprobar_solicitudes', 'rechazar_solicitudes']
+    
+    def aprobar_solicitudes(self, request, queryset):
+        """Acción para aprobar solicitudes seleccionadas"""
+        aprobadas = 0
+        errores = []
+        
+        for solicitud in queryset.filter(status='pendiente'):
+            try:
+                usuario = solicitud.aprobar(request.user)
+                aprobadas += 1
+                self.message_user(
+                    request, 
+                    f"Usuario '{usuario.username}' creado exitosamente.",
+                    level='success'
+                )
+            except ValueError as e:
+                errores.append(f"Error con {solicitud.username}: {str(e)}")
+        
+        if aprobadas > 0:
+            self.message_user(
+                request,
+                f"{aprobadas} solicitud(es) aprobada(s) exitosamente.",
+                level='success'
+            )
+        
+        for error in errores:
+            self.message_user(request, error, level='error')
+    
+    aprobar_solicitudes.short_description = "Aprobar solicitudes seleccionadas"
+    
+    def rechazar_solicitudes(self, request, queryset):
+        """Acción para rechazar solicitudes seleccionadas"""
+        rechazadas = 0
+        
+        for solicitud in queryset.filter(status='pendiente'):
+            try:
+                solicitud.rechazar(request.user, "Rechazado desde el panel de administración")
+                rechazadas += 1
+            except ValueError as e:
+                self.message_user(request, f"Error: {str(e)}", level='error')
+        
+        if rechazadas > 0:
+            self.message_user(
+                request,
+                f"{rechazadas} solicitud(es) rechazada(s).",
+                level='warning'
+            )
+    
+    rechazar_solicitudes.short_description = "Rechazar solicitudes seleccionadas"
+    
+    def get_queryset(self, request):
+        """Optimizar consultas con select_related"""
+        return super().get_queryset(request).select_related('procesado_por')
+    
+    def has_add_permission(self, request):
+        """No permitir agregar solicitudes desde el admin (solo desde formulario)"""
+        return False

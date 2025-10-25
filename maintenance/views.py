@@ -6,7 +6,7 @@ from django.db.models import Q, Max
 from django.utils import timezone
 from datetime import timedelta
 from .models import Vehiculo, TipoMantenimiento, IntervaloMantenimiento, RegistroMantenimiento
-from .forms import VehiculoForm, RegistroMantenimientoForm, FiltroMantenimientoForm
+from .forms import VehiculoForm, RegistroMantenimientoForm, FiltroMantenimientoForm, UserRegistrationForm
 
 
 @login_required
@@ -339,3 +339,26 @@ def get_tipos_mantenimiento_json(request):
     
     except Vehiculo.DoesNotExist:
         return JsonResponse({'tipos': []})
+
+
+def registro_usuario(request):
+    """Vista para el registro de nuevos usuarios (requiere aprobación)"""
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            # Guardar la solicitud de registro
+            solicitud = form.save()
+            messages.success(
+                request, 
+                f'¡Solicitud de registro enviada exitosamente! Tu solicitud está pendiente de aprobación por el administrador. Te contactaremos a {solicitud.email} cuando sea procesada.'
+            )
+            return redirect('maintenance:registro_exitoso')
+    else:
+        form = UserRegistrationForm()
+    
+    return render(request, 'registration/registro.html', {'form': form})
+
+
+def registro_exitoso(request):
+    """Vista para mostrar mensaje de éxito tras el registro"""
+    return render(request, 'registration/registro_exitoso.html')

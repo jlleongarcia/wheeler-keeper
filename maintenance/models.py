@@ -351,3 +351,124 @@ class RegistroMantenimiento(models.Model):
                 return True, f"Próximo en {dias_restantes} días"
         
         return False, "No próximo"
+
+
+class UserRegistrationRequest(models.Model):
+    """Modelo para almacenar solicitudes de registro de usuarios pendientes de aprobación"""
+    
+    STATUS_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('aprobado', 'Aprobado'),
+        ('rechazado', 'Rechazado'),
+    ]
+    
+    username = models.CharField(
+        max_length=150,
+        verbose_name="Nombre de usuario",
+        help_text="Nombre de usuario único para el nuevo usuario"
+    )
+    email = models.EmailField(
+        verbose_name="Correo electrónico",
+        help_text="Dirección de correo electrónico del solicitante"
+    )
+    first_name = models.CharField(
+        max_length=30,
+        verbose_name="Nombre",
+        help_text="Nombre del solicitante"
+    )
+    last_name = models.CharField(
+        max_length=150,
+        verbose_name="Apellidos",
+        help_text="Apellidos del solicitante"
+    )
+    password_hash = models.CharField(
+        max_length=128,
+        verbose_name="Hash de contraseña",
+        help_text="Hash de la contraseña del usuario"
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pendiente',
+        verbose_name="Estado",
+        help_text="Estado actual de la solicitud"
+    )
+    
+    fecha_solicitud = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de solicitud",
+        help_text="Fecha y hora de la solicitud"
+    )
+    fecha_procesado = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de procesado",
+        help_text="Fecha y hora de aprobación/rechazo"
+    )
+    procesado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Procesado por",
+        help_text="Usuario administrador que procesó la solicitud"
+    )
+    notas = models.TextField(
+        blank=True,
+        verbose_name="Notas",
+        help_text="Notas adicionales del administrador"
+    )
+    
+    class Meta:
+        verbose_name = "Solicitud de Registro"
+        verbose_name_plural = "Solicitudes de Registro"
+        ordering = ['-fecha_solicitud']
+    
+    def __str__(self):
+        return f"{self.username} ({self.first_name} {self.last_name}) - {self.get_status_display()}"
+    
+    def aprobar(self, admin_user, notas=""):
+        """Aprobar la solicitud y crear el usuario"""
+        from django.contrib.auth.models import User
+        from django.contrib.auth.hashers import make_password
+        from django.utils import timezone
+        
+        if self.status != 'pendiente':
+            raise ValueError("Solo se pueden aprobar solicitudes pendientes")
+        
+        # Verificar que el username no exista
+        if User.objects.filter(username=self.username).exists():
+            raise ValueError("El nombre de usuario ya existe")
+        
+        # Crear el usuario
+        user = User.objects.create(
+            username=self.username,
+            email=self.email,
+            first_name=self.first_name,
+            last_name=self.last_name,
+            password=self.password_hash,  # Ya viene hasheada
+            is_active=True
+        )
+        
+        # Actualizar la solicitud
+        self.status = 'aprobado'
+        self.fecha_procesado = timezone.now()
+        self.procesado_por = admin_user
+        self.notas = notas
+        self.save()
+        
+        return user
+    
+    def rechazar(self, admin_user, notas=""):
+        """Rechazar la solicitud"""
+        from django.utils import timezone
+        
+        if self.status != 'pendiente':
+            raise ValueError("Solo se pueden rechazar solicitudes pendientes")
+        
+        self.status = 'rechazado'
+        self.fecha_procesado = timezone.now()
+        self.procesado_por = admin_user
+        self.notas = notas
+        self.save()
