@@ -20,13 +20,14 @@ from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.auth import views as auth_views
 
 def home_view(request):
     """Vista principal que redirige según el estado de autenticación"""
     if request.user.is_authenticated:
         return redirect('maintenance:inicio')
     else:
-        return render(request, 'home.html')
+        return redirect('login')
 
 def redirect_to_maintenance(request):
     """Redirigir la raíz a la aplicación de mantenimiento"""
@@ -35,6 +36,14 @@ def redirect_to_maintenance(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('mantenimiento/', include('maintenance.urls')),
+    
+    # URLs de autenticación
+    path('accounts/login/', auth_views.LoginView.as_view(
+        template_name='registration/login.html',
+        redirect_authenticated_user=True
+    ), name='login'),
+    path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
+    
     path('', home_view, name='home'),
 ]
 
