@@ -27,7 +27,11 @@ def home_view(request):
     if request.user.is_authenticated:
         return redirect('maintenance:inicio')
     else:
-        return redirect('login')
+        return render(request, 'home.html')
+
+def home_page_view(request):
+    """Vista que siempre muestra la página home"""
+    return render(request, 'home.html')
 
 def redirect_to_maintenance(request):
     """Redirigir la raíz a la aplicación de mantenimiento"""
@@ -44,6 +48,8 @@ urlpatterns = [
     ), name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
     
+    # Páginas principales
+    path('home/', home_page_view, name='home_page'),
     path('', home_view, name='home'),
 ]
 
