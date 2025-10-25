@@ -135,67 +135,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const maintenanceInfo = document.getElementById('maintenanceInfo');
     const maintenanceDetails = document.getElementById('maintenanceDetails');
     
-    // Actualizar tipos de mantenimiento cuando cambie el vehículo
+    // Eventos básicos sin funcionalidad compleja por ahora
     vehiculoSelect.addEventListener('change', function() {
-        const vehiculoId = this.value;
-        if (vehiculoId) {
-            fetch(`{% url 'maintenance:api_tipos_mantenimiento' %}?vehiculo_id=${vehiculoId}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Limpiar opciones actuales
-                    tipoSelect.innerHTML = '<option value="">---------</option>';
-                    
-                    // Añadir nuevas opciones agrupadas por categoría
-                    let currentCategory = '';
-                    data.tipos.forEach(tipo => {
-                        if (tipo.categoria !== currentCategory) {
-                            if (currentCategory !== '') {
-                                tipoSelect.appendChild(document.createElement('optgroup')).label = tipo.categoria;
-                            }
-                            currentCategory = tipo.categoria;
-                        }
-                        
-                        const option = document.createElement('option');
-                        option.value = tipo.id;
-                        option.textContent = tipo.nombre;
-                        option.dataset.intervalKm = tipo.intervalo_km;
-                        option.dataset.intervalMeses = tipo.intervalo_meses;
-                        tipoSelect.appendChild(option);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error al cargar tipos de mantenimiento:', error);
-                });
-        } else {
-            tipoSelect.innerHTML = '<option value="">---------</option>';
-            maintenanceInfo.style.display = 'none';
-        }
+        maintenanceInfo.style.display = 'none';
     });
     
-    // Mostrar información del tipo de mantenimiento
     tipoSelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        if (selectedOption.value) {
-            const intervalKm = selectedOption.dataset.intervalKm;
-            const intervalMeses = selectedOption.dataset.intervalMeses;
-            
-            let info = '<strong>Intervalos recomendados:</strong><br>';
-            if (intervalKm > 0) {
-                info += `• Cada ${intervalKm.toLocaleString()} kilómetros<br>`;
-            }
-            if (intervalMeses > 0) {
-                info += `• Cada ${intervalMeses} meses<br>`;
-            }
-            if (intervalKm == 0 && intervalMeses == 0) {
-                info += '• Sin intervalo predefinido (según necesidad)';
-            }
-            
-            maintenanceDetails.innerHTML = info;
-            maintenanceInfo.style.display = 'block';
-        } else {
-            maintenanceInfo.style.display = 'none';
-        }
+        // Ocultar información por ahora
+        maintenanceInfo.style.display = 'none';
     });
 });
 </script>
+
+
 {% endblock %}

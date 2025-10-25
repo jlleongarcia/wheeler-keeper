@@ -116,4 +116,25 @@
         </div>
     </div>
 </div>
+
+<!-- Info del tipo de mantenimiento seleccionado -->
+<div class="container mt-3" id="maintenanceInfo" style="display: none;">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="alert alert-info">
+                <h6><i class="bi bi-info-circle"></i> Información del Mantenimiento</h6>
+                <div id="maintenanceDetails"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // JavaScript básico sin funcionalidades complejas por ahora
+    console.log('Formulario de edición cargado');
+});
+</script>
 {% endblock %}

@@ -316,17 +316,26 @@ def get_tipos_mantenimiento_json(request):
             activo=True
         ).order_by('categoria', 'nombre')
         
-        tipos_data = []
+        # Agrupar por categorías
+        tipos_agrupados = {}
+        categoria_labels = dict(TipoMantenimiento.CATEGORIA_CHOICES)
+        
         for tipo in tipos:
-            tipos_data.append({
+            categoria = tipo.categoria
+            if categoria not in tipos_agrupados:
+                tipos_agrupados[categoria] = {
+                    'label': categoria_labels.get(categoria, categoria.title()),
+                    'tipos': []
+                }
+            
+            tipos_agrupados[categoria]['tipos'].append({
                 'id': tipo.id,
                 'nombre': tipo.nombre,
-                'categoria': tipo.get_categoria_display(),
                 'intervalo_km': tipo.intervalo_km,
                 'intervalo_meses': tipo.intervalo_meses
             })
         
-        return JsonResponse({'tipos': tipos_data})
+        return JsonResponse({'categorias': tipos_agrupados})
     
     except Vehiculo.DoesNotExist:
         return JsonResponse({'tipos': []})

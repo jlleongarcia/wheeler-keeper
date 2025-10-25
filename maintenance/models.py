@@ -160,7 +160,7 @@ class TipoMantenimiento(models.Model):
         ordering = ['categoria', 'nombre']
     
     def __str__(self):
-        return f"{self.nombre} ({self.get_categoria_display()})"
+        return self.nombre
     
     def es_aplicable_a_vehiculo(self, vehiculo):
         """Verifica si este tipo de mantenimiento es aplicable al vehículo dado"""

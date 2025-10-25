@@ -1,7 +1,67 @@
 from django import forms
 from django.utils import timezone
 from django.db import models
+from django.utils.safestring import mark_safe
+from itertools import groupby
 from .models import Vehiculo, TipoMantenimiento, RegistroMantenimiento
+
+
+def tipo_mantenimiento_categoria_choices(vehiculo=None, include_empty=True):
+    """Return tipos de mantenimiento grouped by categoria, suitable for using as optgroups for select inputs"""
+
+    def categoria_display(t):
+        return "%s" % (t.get_categoria_display())
+
+    def tipo_name(t):
+        return "%s" % (t.nombre)
+
+    tipos = TipoMantenimiento.objects.filter(activo=True).select_related().order_by("categoria", "nombre")
+
+    if vehiculo:
+        tipos = tipos.filter(
+            models.Q(vehiculos_aplicables='todos') | models.Q(vehiculos_aplicables=vehiculo.tipo)
+        )
+
+    choices = [(categoria, list(tipos_cat)) for (categoria, tipos_cat) in groupby(tipos, key=categoria_display)]
+    choices = [(categoria, [(t.id, tipo_name(t)) for t in tipos_cat]) for (categoria, tipos_cat) in choices]
+    
+    if include_empty:
+        choices = [("", "---------")] + choices
+
+    return choices
+
+
+class TipoMantenimientoModelChoiceField(forms.ModelChoiceField):
+    """Campo personalizado para mostrar tipos de mantenimiento agrupados por categoría"""
+    
+    def __init__(self, vehiculo=None, *args, **kwargs):
+        self.vehiculo = vehiculo
+        # Configurar queryset base
+        queryset = TipoMantenimiento.objects.filter(activo=True)
+        if vehiculo:
+            queryset = queryset.filter(
+                models.Q(vehiculos_aplicables='todos') | models.Q(vehiculos_aplicables=vehiculo.tipo)
+            )
+        
+        kwargs['queryset'] = queryset
+        super().__init__(*args, **kwargs)
+        self.update_choices()
+    
+    def update_choices(self):
+        """Actualiza las opciones con agrupación por categorías"""
+        self.choices = tipo_mantenimiento_categoria_choices(vehiculo=self.vehiculo, include_empty=True)
+    
+    def set_vehiculo(self, vehiculo):
+        """Actualiza el vehículo y regenera las opciones"""
+        self.vehiculo = vehiculo
+        # Actualizar queryset
+        queryset = TipoMantenimiento.objects.filter(activo=True)
+        if vehiculo:
+            queryset = queryset.filter(
+                models.Q(vehiculos_aplicables='todos') | models.Q(vehiculos_aplicables=vehiculo.tipo)
+            )
+        self.queryset = queryset
+        self.update_choices()
 
 
 class VehiculoForm(forms.ModelForm):
@@ -80,6 +140,13 @@ class VehiculoForm(forms.ModelForm):
 class RegistroMantenimientoForm(forms.ModelForm):
     """Formulario para registrar un nuevo mantenimiento"""
     
+    # Campo personalizado para tipos de mantenimiento agrupados
+    tipo_mantenimiento = TipoMantenimientoModelChoiceField(
+        queryset=TipoMantenimiento.objects.filter(activo=True),
+        empty_label="---------",
+        widget=forms.Select(attrs={'class': 'form-control', 'required': True})
+    )
+    
     class Meta:
         model = RegistroMantenimiento
         fields = [
@@ -88,12 +155,6 @@ class RegistroMantenimientoForm(forms.ModelForm):
         ]
         widgets = {
             'vehiculo': forms.Select(
-                attrs={
-                    'class': 'form-control',
-                    'required': True
-                }
-            ),
-            'tipo_mantenimiento': forms.Select(
                 attrs={
                     'class': 'form-control',
                     'required': True
@@ -140,26 +201,27 @@ class RegistroMantenimientoForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Filtrar vehículos por usuario
+        # Filtrar vehículos por usuario si es necesario
         if user:
             self.fields['vehiculo'].queryset = Vehiculo.objects.filter(
                 propietario=user
             )
         
-        # Si se está editando, filtrar tipos de mantenimiento por el vehículo
-        if self.instance and self.instance.pk and self.instance.vehiculo:
+        # Si estamos editando un mantenimiento existente, configurar el campo con el vehículo
+        if self.instance.pk and hasattr(self.instance, 'vehiculo'):
             vehiculo = self.instance.vehiculo
-            tipos_aplicables = TipoMantenimiento.objects.filter(
-                models.Q(vehiculos_aplicables='todos') |
-                models.Q(vehiculos_aplicables=vehiculo.tipo),
-                activo=True
-            )
-            self.fields['tipo_mantenimiento'].queryset = tipos_aplicables
+            self.fields['tipo_mantenimiento'].set_vehiculo(vehiculo)
         
         # Establecer fecha por defecto como hoy
         if not self.instance.pk:
             self.fields['fecha_realizacion'].initial = timezone.now().date()
     
+    def set_vehiculo_for_tipos(self, vehiculo):
+        """Método para actualizar los tipos de mantenimiento según el vehículo seleccionado"""
+        if hasattr(self.fields['tipo_mantenimiento'], 'set_vehiculo'):
+            self.fields['tipo_mantenimiento'].set_vehiculo(vehiculo)
+    
+
     def clean_fecha_realizacion(self):
         """Validar que la fecha no sea futura"""
         fecha = self.cleaned_data.get('fecha_realizacion')
