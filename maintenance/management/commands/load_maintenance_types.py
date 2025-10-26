@@ -97,14 +97,6 @@ class Command(BaseCommand):
             
             # Filtros
             {
-                'nombre': 'Cambio de filtro de aire',
-                'descripcion': 'Sustitución del filtro de aire del motor',
-                'categoria': 'filtros',
-                'intervalo_km': 20000,
-                'intervalo_meses': 12,
-                'vehiculos_aplicables': 'todos'
-            },
-            {
                 'nombre': 'Cambio de filtro de combustible',
                 'descripcion': 'Sustitución del filtro de combustible',
                 'categoria': 'filtros',
@@ -113,8 +105,24 @@ class Command(BaseCommand):
                 'vehiculos_aplicables': 'todos'
             },
             {
-                'nombre': 'Cambio de filtro habitáculo',
-                'descripcion': 'Sustitución del filtro del aire acondicionado/calefacción',
+                'nombre': 'Cambio de filtro de aceite',
+                'descripcion': 'Sustitución del filtro de aceite del motor',
+                'categoria': 'filtros',
+                'intervalo_km': 15000,
+                'intervalo_meses': 12,
+                'vehiculos_aplicables': 'todos'
+            },
+            {
+                'nombre': 'Cambio de filtro de aire',
+                'descripcion': 'Sustitución del filtro de aire del motor',
+                'categoria': 'filtros',
+                'intervalo_km': 20000,
+                'intervalo_meses': 12,
+                'vehiculos_aplicables': 'todos'
+            },
+            {
+                'nombre': 'Cambio de filtro de polen',
+                'descripcion': 'Sustitución del filtro de polen del habitáculo',
                 'categoria': 'filtros',
                 'intervalo_km': 15000,
                 'intervalo_meses': 12,
