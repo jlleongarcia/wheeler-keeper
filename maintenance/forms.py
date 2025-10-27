@@ -36,20 +36,43 @@ class TipoMantenimientoModelChoiceField(forms.ModelChoiceField):
     
     def __init__(self, vehiculo=None, *args, **kwargs):
         self.vehiculo = vehiculo
-        # Configurar queryset base
-        queryset = TipoMantenimiento.objects.filter(activo=True)
-        if vehiculo:
-            queryset = queryset.filter(
-                models.Q(vehiculos_aplicables='todos') | models.Q(vehiculos_aplicables=vehiculo.tipo)
-            )
+        # Configurar queryset base - usar none() para evitar consultas en import
+        try:
+            queryset = TipoMantenimiento.objects.filter(activo=True)
+            if vehiculo:
+                queryset = queryset.filter(
+                    models.Q(vehiculos_aplicables='todos') | models.Q(vehiculos_aplicables=vehiculo.tipo)
+                )
+        except Exception:
+            # Si hay error de DB (como en primera instalación), usar queryset vacío
+            queryset = TipoMantenimiento.objects.none()
         
         kwargs['queryset'] = queryset
         super().__init__(*args, **kwargs)
-        self.update_choices()
+        # No llamar update_choices en __init__ para evitar consultas durante import
+        self._choices_updated = False
     
     def update_choices(self):
         """Actualiza las opciones con agrupación por categorías"""
-        self.choices = tipo_mantenimiento_categoria_choices(vehiculo=self.vehiculo, include_empty=True)
+        try:
+            self.choices = tipo_mantenimiento_categoria_choices(vehiculo=self.vehiculo, include_empty=True)
+            self._choices_updated = True
+        except Exception:
+            # Si hay error de DB, usar choices vacías
+            self.choices = [("", "---------")]
+            self._choices_updated = False
+    
+    @property
+    def choices(self):
+        """Lazy loading de choices"""
+        if not getattr(self, '_choices_updated', False):
+            self.update_choices()
+        return super().choices
+    
+    @choices.setter
+    def choices(self, value):
+        """Setter para choices"""
+        super(TipoMantenimientoModelChoiceField, self.__class__).choices.fset(self, value)
     
     def set_vehiculo(self, vehiculo):
         """Actualiza el vehículo y regenera las opciones"""

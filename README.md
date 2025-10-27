@@ -193,6 +193,121 @@ After setting up the basic structure, you can:
 5. **Implement Search**: Add search and filtering capabilities
 6. **Add Authentication**: Implement user authentication for multi-user support
 
+## 🚀 Installation Guide - Troubleshooting
+
+### ❌ Common Problem: Database Connection Error
+
+If when running `docker-compose up -d` you get this error:
+
+```
+django.db.utils.OperationalError: connection to server at "db" failed
+```
+
+This happens because Django tries to connect before PostgreSQL is ready.
+
+### ✅ Solution: Use the Makefile
+
+#### Installation with Make (RECOMMENDED)
+
+```bash
+# Clone repository
+git clone <your-repository>
+cd wheeler-keeper
+
+# Automatic installation
+make install
+```
+
+#### Most useful Make commands
+
+```bash
+make help              # See all commands
+make install           # First installation
+make up                # Start services (first time)  
+make quick-start       # Quick start
+make down              # Stop everything
+make logs              # View logs
+make createsuperuser   # Create admin user
+make backup-db         # Database backup
+```
+
+#### 🔧 Manual Installation (without Make)
+
+If you don't have Make installed:
+
+```bash
+# 1. Build images
+docker-compose build
+
+# 2. Start ONLY the database
+docker-compose up -d db
+
+# 3. WAIT for PostgreSQL to be ready (important!)
+sleep 15
+
+# 4. Run migrations
+docker-compose run --rm web python manage.py migrate
+
+# 5. Load maintenance types
+docker-compose run --rm web python manage.py load_maintenance_types
+
+# 6. Start web application
+docker-compose up -d web
+```
+
+#### 🏥 If you still have problems
+
+##### Check service status
+```bash
+docker-compose ps
+make status  # with Make
+```
+
+##### View detailed logs
+```bash
+docker-compose logs db      # PostgreSQL logs
+docker-compose logs web     # Django logs
+make logs                   # with Make
+```
+
+##### Complete restart
+```bash
+docker-compose down -v      # Stop everything
+docker-compose up -d db     # Only DB
+sleep 15                    # Wait
+docker-compose up -d web    # Application
+```
+
+##### Clean completely (last resort)
+```bash
+make clean-all  # Removes EVERYTHING (including data!)
+# Or manual:
+docker-compose down -v --rmi all
+docker system prune -af
+```
+
+#### 🎯 Access after installation
+
+- **Web**: http://localhost:8200
+- **Admin**: http://localhost:8200/admin
+- **Default user**: `sa` / `admin123`
+
+#### 🔍 Why does this problem occur?
+
+1. **Startup order**: Docker Compose starts services in parallel
+2. **Dependencies**: Django needs PostgreSQL ready BEFORE starting
+3. **Initialization time**: PostgreSQL takes a few seconds to be available
+4. **Import queries**: Django forms make queries during import time
+
+#### 🛠 What we have solved?
+
+1. **Makefile**: Controls startup order
+2. **Improved entrypoint**: Waits for PostgreSQL before continuing
+3. **Lazy forms**: Don't query DB during import
+4. **Error handling**: Graceful handling if DB is not available
+
+With these changes the problem should be resolved! 🎉
+
 ## Contributing
 
 1. Fork the repository
