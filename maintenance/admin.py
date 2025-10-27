@@ -265,7 +265,7 @@ class UserRegistrationRequestAdmin(admin.ModelAdmin):
         
         for solicitud in queryset.filter(status='pendiente'):
             try:
-                usuario = solicitud.aprobar(request.user)
+                usuario = solicitud.aprobar(request.user, "Aprobado desde el panel de administración")
                 aprobadas += 1
                 self.message_user(
                     request, 

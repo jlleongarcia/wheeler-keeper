@@ -379,7 +379,7 @@ Detalles del solicitante:
 - Fecha de solicitud: {solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M')}
 
 Para revisar y aprobar/rechazar esta solicitud, accede al panel de administración:
-http://100.86.241.113:8200/admin/maintenance/userregistrationrequest/
+{request.build_absolute_uri('/admin/maintenance/userregistrationrequest/')}
 
 ¡Saludos!
 Wheeler Keeper

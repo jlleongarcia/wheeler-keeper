@@ -458,6 +458,9 @@ class UserRegistrationRequest(models.Model):
         self.notas = notas
         self.save()
         
+        # Enviar email de notificación al usuario aprobado
+        self._enviar_email_aprobacion()
+        
         return user
     
     def rechazar(self, admin_user, notas=""):
@@ -472,3 +475,90 @@ class UserRegistrationRequest(models.Model):
         self.procesado_por = admin_user
         self.notas = notas
         self.save()
+        
+        # Enviar email de notificación al usuario rechazado
+        self._enviar_email_rechazo(notas)
+
+    def _enviar_email_aprobacion(self):
+        """Enviar email de notificación cuando se aprueba la solicitud"""
+        try:
+            from django.core.mail import send_mail
+            from django.conf import settings
+            
+            # Obtener dominio principal configurado
+            allowed_hosts = getattr(settings, 'ALLOWED_HOSTS', [])
+            domain = 'localhost:8200'  # fallback
+            for host in allowed_hosts:
+                if host not in ['*', 'localhost', '127.0.0.1', '0.0.0.0']:
+                    domain = host
+                    break
+            
+            login_url = f"https://{domain}{settings.LOGIN_URL}" if domain != 'localhost:8200' else f"http://{domain}{settings.LOGIN_URL}"
+            
+            subject = '[Wheeler Keeper] ¡Tu solicitud ha sido aprobada!'
+            message = f"""
+Hola {self.first_name},
+
+¡Excelentes noticias! Tu solicitud de registro en Wheeler Keeper ha sido aprobada.
+
+Ya puedes acceder al sistema con tus credenciales:
+- Nombre de usuario: {self.username}
+- Contraseña: La que proporcionaste al registrarte
+
+Accede al sistema:
+🔗 Iniciar sesión: {login_url}
+
+¡Bienvenido/a a Wheeler Keeper!
+
+Saludos,
+El equipo de Wheeler Keeper
+            """
+            
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[self.email],
+                fail_silently=False,
+            )
+            
+        except Exception as e:
+            # Log del error pero no fallar la aprobación
+            print(f"Error enviando email de aprobación a {self.email}: {str(e)}")
+
+    def _enviar_email_rechazo(self, notas=""):
+        """Enviar email de notificación cuando se rechaza la solicitud"""
+        try:
+            from django.core.mail import send_mail
+            from django.conf import settings
+            
+            subject = '[Wheeler Keeper] Solicitud de registro no aprobada'
+            message = f"""
+Hola {self.first_name},
+
+Lamentamos informarte que tu solicitud de registro en Wheeler Keeper no ha sido aprobada en este momento.
+
+Detalles de tu solicitud:
+- Nombre de usuario solicitado: {self.username}
+- Email: {self.email}
+- Fecha de solicitud: {self.fecha_solicitud.strftime('%d/%m/%Y %H:%M')}
+
+{f"Motivo: {notas}" if notas else ""}
+
+Si tienes preguntas sobre esta decisión, puedes contactar con el administrador.
+
+Saludos,
+El equipo de Wheeler Keeper
+            """
+            
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[self.email],
+                fail_silently=False,
+            )
+            
+        except Exception as e:
+            # Log del error pero no fallar el rechazo
+            print(f"Error enviando email de rechazo a {self.email}: {str(e)}")

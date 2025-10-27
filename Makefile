@@ -15,7 +15,30 @@ NC = \033[0m # No Color
 help: ## Muestra esta ayuda
 	@echo "$(GREEN)Wheeler Keeper - Comandos disponibles:$(NC)"
 	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(YELLOW)%-20s$(NC) %s\n", $$1, $$2}'
+	@echo "$(YELLOW)🚀 Primera instalación:$(NC)"
+	@echo "  $(YELLOW)first-time-setup$(NC)  - Configuración completa para primera vez"
+	@echo "  $(YELLOW)config-setup$(NC)      - Solo copiar archivos de configuración"
+	@echo "  $(YELLOW)check-config$(NC)      - Verificar configuración"
+	@echo "  $(YELLOW)install$(NC)           - Instalar después de configurar"
+	@echo ""
+	@echo "$(YELLOW)📊 Operaciones diarias:$(NC)"
+	@echo "  $(YELLOW)quick-start$(NC)       - Inicio rápido"
+	@echo "  $(YELLOW)up$(NC)                - Levantar servicios completo"
+	@echo "  $(YELLOW)down$(NC)              - Detener servicios"
+	@echo "  $(YELLOW)restart$(NC)           - Reiniciar servicios"
+	@echo ""
+	@echo "$(YELLOW)🛠️  Desarrollo:$(NC)"
+	@echo "  $(YELLOW)logs$(NC)              - Ver logs en tiempo real"
+	@echo "  $(YELLOW)shell$(NC)             - Acceder al shell de Django"
+	@echo "  $(YELLOW)migrate$(NC)           - Ejecutar migraciones"
+	@echo "  $(YELLOW)createsuperuser$(NC)   - Crear usuario administrador"
+	@echo ""
+	@echo "$(YELLOW)🔧 Utilidades:$(NC)"
+	@echo "  $(YELLOW)health$(NC)            - Verificar estado de servicios"
+	@echo "  $(YELLOW)backup-db$(NC)         - Hacer backup de la base de datos"
+	@echo "  $(YELLOW)clean-all$(NC)         - Limpiar todo (⚠️ PELIGROSO)"
+	@echo ""
+	@echo "$(GREEN)Para ver todos los comandos: grep '^[a-zA-Z_-]*:.*##' Makefile$(NC)"
 
 build: ## Construye las imágenes Docker
 	@echo "$(GREEN)🔨 Construyendo imágenes Docker...$(NC)"
@@ -126,6 +149,33 @@ health: ## Verifica el estado de salud de los servicios
 	@echo "Aplicación web:"
 	@curl -s -o /dev/null -w "Status: %{http_code}\n" http://localhost:8200/ || echo "$(RED)❌ Web no disponible$(NC)"
 
+check-config: ## Verifica la configuración antes de instalar
+	@echo "$(GREEN)🔍 Verificando configuración...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)📁 Archivos de configuración:$(NC)"
+	@if [ -f .env ]; then \
+		echo "   ✅ .env existe"; \
+	else \
+		echo "   ❌ .env falta - ejecuta: make config-setup"; \
+	fi
+	@if [ -f wheeler_keeper/settings.py ]; then \
+		echo "   ✅ settings.py existe"; \
+	else \
+		echo "   ❌ settings.py falta - ejecuta: make config-setup"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)🔐 Verificación de seguridad:$(NC)"
+	@if git check-ignore .env >/dev/null 2>&1; then \
+		echo "   ✅ .env está en .gitignore"; \
+	else \
+		echo "   ⚠️  .env NO está en .gitignore"; \
+	fi
+	@if git check-ignore wheeler_keeper/settings.py >/dev/null 2>&1; then \
+		echo "   ✅ settings.py está en .gitignore"; \
+	else \
+		echo "   ⚠️  settings.py NO está en .gitignore"; \
+	fi
+
 # Comandos de desarrollo
 dev-reset: ## Reinicia todo el entorno de desarrollo
 	@echo "$(YELLOW)🔄 Reiniciando entorno de desarrollo...$(NC)"
@@ -133,11 +183,42 @@ dev-reset: ## Reinicia todo el entorno de desarrollo
 	$(MAKE) build
 	$(MAKE) up
 
+config-setup: ## Copia archivos de configuración desde templates
+	@echo "$(GREEN)⚙️  Configurando archivos iniciales...$(NC)"
+	@if [ ! -f .env ]; then \
+		echo "$(YELLOW)📄 Copiando .env.example → .env$(NC)"; \
+		cp .env.example .env; \
+		echo "$(GREEN)✅ Archivo .env creado$(NC)"; \
+		echo "$(YELLOW)⚠️  EDITA .env con tu configuración específica$(NC)"; \
+	else \
+		echo "$(YELLOW)ℹ️  .env ya existe, omitiendo...$(NC)"; \
+	fi
+	@if [ ! -f wheeler_keeper/settings.py ]; then \
+		echo "$(YELLOW)📄 Copiando settings.example.py → settings.py$(NC)"; \
+		cp wheeler_keeper/settings.example.py wheeler_keeper/settings.py; \
+		echo "$(GREEN)✅ Archivo settings.py creado$(NC)"; \
+		echo "$(YELLOW)⚠️  EDITA settings.py con tus dominios reales$(NC)"; \
+	else \
+		echo "$(YELLOW)ℹ️  settings.py ya existe, omitiendo...$(NC)"; \
+	fi
+	@echo "$(GREEN)🎯 Configuración completada!$(NC)"
+	@echo ""
+	@echo "$(YELLOW)📝 SIGUIENTE PASO:$(NC)"
+	@echo "   1. Edita .env con tu configuración de base de datos y email"
+	@echo "   2. Edita wheeler_keeper/settings.py con tus dominios"
+	@echo "   3. Ejecuta: make install"
+
 install: ## Primera instalación del proyecto
 	@echo "$(GREEN)🎯 Instalación inicial de Wheeler Keeper$(NC)"
-	@echo "$(YELLOW)📋 Paso 1: Construyendo imágenes...$(NC)"
+	@echo "$(YELLOW)📋 Paso 1: Verificando configuración...$(NC)"
+	@if [ ! -f .env ] || [ ! -f wheeler_keeper/settings.py ]; then \
+		echo "$(RED)❌ Faltan archivos de configuración$(NC)"; \
+		echo "$(YELLOW)Ejecuta primero: make config-setup$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(YELLOW)📋 Paso 2: Construyendo imágenes...$(NC)"
 	$(MAKE) build
-	@echo "$(YELLOW)📋 Paso 2: Configurando aplicación...$(NC)"
+	@echo "$(YELLOW)📋 Paso 3: Configurando aplicación...$(NC)"
 	$(MAKE) up
 	@echo "$(GREEN)✅ ¡Instalación completada!$(NC)"
 	@echo ""
@@ -150,3 +231,13 @@ install: ## Primera instalación del proyecto
 	@echo "   make createsuperuser - Crear usuario administrador"
 	@echo "   make logs        - Ver logs"
 	@echo "   make help        - Ver todos los comandos"
+
+first-time-setup: ## Configuración completa para primera vez (config + install)
+	@echo "$(GREEN)🚀 Configuración inicial completa$(NC)"
+	$(MAKE) config-setup
+	@echo ""
+	@echo "$(YELLOW)⏸️  PAUSA: Configura tus archivos ahora$(NC)"
+	@echo "   📝 Edita .env con tus credenciales"
+	@echo "   📝 Edita wheeler_keeper/settings.py con tus dominios"
+	@read -p "Presiona ENTER cuando hayas terminado la configuración..." dummy
+	$(MAKE) install

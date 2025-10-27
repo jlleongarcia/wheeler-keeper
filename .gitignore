@@ -88,6 +88,9 @@ env/
 venv/
 ENV/
 env.bak/
+
+# Local settings (contains sensitive configuration)
+wheeler_keeper/settings.py
 venv.bak/
 
 # Spyder project settings

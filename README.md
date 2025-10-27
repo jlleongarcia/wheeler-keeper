@@ -44,28 +44,64 @@ wheeler-keeper/
 
 ### Installation & Setup
 
-1. **Clone and navigate to the project**:
+#### 🚀 Quick Start (Recommended)
+
+1. **Clone the repository**:
    ```bash
+   git clone https://github.com/your-username/wheeler-keeper.git
    cd wheeler-keeper
    ```
 
-2. **Build and start the containers**:
+2. **Complete setup with Make**:
+   ```bash
+   # One-command setup (interactive)
+   make first-time-setup
+   
+   # Or step by step:
+   make config-setup    # Copy configuration templates
+   # Edit .env and wheeler_keeper/settings.py with your data
+   make install         # Build and start
+   ```
+
+3. **Access your app**:
+   - App: http://localhost:8200
+   - Admin: http://localhost:8200/admin
+   - **Default login**: Username: `sa`, Password: `superadminpass123`
+   - ⚠️ **IMPORTANT**: Change the password on first login for security!
+
+#### ⚙️ Configuration Files
+
+The project uses secure configuration files:
+- **`.env`** - Database and email credentials (not tracked by Git)
+- **`settings.py`** - Django configuration with your domains (not tracked by Git)
+- Templates are provided: `.env.example` and `settings.example.py`
+
+#### 📋 Available Commands
+
+```bash
+make help              # See all available commands
+make quick-start       # Daily start (when already configured)
+make logs             # View real-time logs
+make shell            # Access Django shell
+make check-config     # Verify configuration
+```
+
+#### 🐳 Manual Docker Setup (Alternative)
+
+If you prefer manual Docker commands:
+
+1. **Copy configuration files**:
+   ```bash
+   cp .env.example .env
+   cp wheeler_keeper/settings.example.py wheeler_keeper/settings.py
+   ```
+
+2. **Edit configuration files with your specific data**
+
+3. **Build and start**:
    ```bash
    docker-compose up -d --build
    ```
-
-   The setup automatically:
-   - Waits for PostgreSQL to be ready
-   - Runs database migrations
-   - Creates a default superuser (username: `sa`, password: `superadminpass123`)
-   - Collects static files
-
-4. **Access your app**: 
-   - App: http://localhost:8200
-   - Admin: http://localhost:8200/admin (sa / superadminpass123)
-   - Django admin: http://localhost:8200/admin
-   - **Default login**: Username: `sa`, Password: `superadminpass123`
-   - ⚠️ **IMPORTANT**: Change the password on first login for security!
 
 ### Development
 
@@ -307,6 +343,73 @@ docker system prune -af
 4. **Error handling**: Graceful handling if DB is not available
 
 With these changes the problem should be resolved! 🎉
+
+## Email Notifications Setup
+
+Wheeler Keeper can send email notifications when new users request registration. By default, emails are only shown in console logs.
+
+### For Real Email Delivery
+
+1. **Copy environment file:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Configure email settings in `.env`:**
+   ```bash
+   # Email configuration
+   EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+   EMAIL_HOST=smtp.gmail.com
+   EMAIL_PORT=587
+   EMAIL_USE_TLS=True
+   EMAIL_HOST_USER=your-email@gmail.com
+   EMAIL_HOST_PASSWORD=your-app-password-here
+   ```
+
+3. **For Gmail users - Generate App Password:**
+
+   **Prerequisites:**
+   - 2-factor authentication must be enabled
+   - Regular account password won't work
+
+   **Steps to get App Password:**
+   1. Go to [Google Account Settings](https://myaccount.google.com)
+   2. Search for "app passwords" in the page search bar
+   3. Or navigate to **Security** → **How you sign in to Google** → **App passwords**
+   4. Or try direct URL: https://myaccount.google.com/apppasswords
+   5. Generate a new app password for "Wheeler Keeper"
+   6. Use the 16-character password in your `.env` file
+
+   **Troubleshooting:**
+   - If "App passwords" doesn't appear, ensure 2-factor authentication is enabled
+   - The option may be under **Security** → **Google Account Access**
+
+4. **Restart containers:**
+   ```bash
+   docker-compose restart
+   # Or using Make:
+   make restart
+   ```
+
+### Email Recipients
+
+Notifications are sent to:
+1. **Primary:** Admin user (`sa`) email address (if configured in database)
+2. **Fallback:** `ADMIN_EMAIL` environment variable (if user `sa` has no email)
+
+### Development Mode (Console Only)
+
+For development without real email delivery:
+```bash
+# In .env file
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+```
+
+View emails in container logs:
+```bash
+docker-compose logs -f web
+# Or: make logs
+```
 
 ## Contributing
 
