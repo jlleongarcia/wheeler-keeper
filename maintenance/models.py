@@ -479,21 +479,41 @@ class UserRegistrationRequest(models.Model):
         # Enviar email de notificación al usuario rechazado
         self._enviar_email_rechazo(notas)
 
+    def _get_login_url(self):
+        """Obtener URL de login con el dominio principal correcto"""
+        from django.conf import settings
+        import re
+        
+        allowed_hosts = getattr(settings, 'ALLOWED_HOSTS', [])
+        domain = 'localhost:8200'  # fallback
+        
+        # Buscar primero dominios reales (que contienen letras, no solo IP)
+        for host in allowed_hosts:
+            if host not in ['*', 'localhost', '127.0.0.1', '0.0.0.0']:
+                # Verificar que no sea una IP (contiene letras, no solo números y puntos)
+                if re.search(r'[a-zA-Z]', host):
+                    domain = host
+                    break
+        
+        # Si no encontramos dominio con letras, usar cualquier host que no esté excluido
+        if domain == 'localhost:8200':
+            for host in allowed_hosts:
+                if host not in ['*', 'localhost', '127.0.0.1', '0.0.0.0']:
+                    domain = host
+                    break
+        
+        # Construir URL completa
+        protocol = "https" if domain != 'localhost:8200' else "http"
+        return f"{protocol}://{domain}{settings.LOGIN_URL}"
+
     def _enviar_email_aprobacion(self):
         """Enviar email de notificación cuando se aprueba la solicitud"""
         try:
             from django.core.mail import send_mail
             from django.conf import settings
             
-            # Obtener dominio principal configurado
-            allowed_hosts = getattr(settings, 'ALLOWED_HOSTS', [])
-            domain = 'localhost:8200'  # fallback
-            for host in allowed_hosts:
-                if host not in ['*', 'localhost', '127.0.0.1', '0.0.0.0']:
-                    domain = host
-                    break
-            
-            login_url = f"https://{domain}{settings.LOGIN_URL}" if domain != 'localhost:8200' else f"http://{domain}{settings.LOGIN_URL}"
+            # Obtener URL de login con dominio correcto
+            login_url = self._get_login_url()
             
             subject = '[Wheeler Keeper] ¡Tu solicitud ha sido aprobada!'
             message = f"""
