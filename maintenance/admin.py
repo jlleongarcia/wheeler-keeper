@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Vehiculo, TipoMantenimiento, IntervaloMantenimiento, RegistroMantenimiento, UserRegistrationRequest
+from .models import Vehiculo, TipoMantenimiento, IntervaloMantenimiento, RegistroMantenimiento, ItemMantenimiento, UserRegistrationRequest
 
 
 @admin.register(Vehiculo)
@@ -151,27 +151,25 @@ class RegistroMantenimientoAdmin(admin.ModelAdmin):
     """Administración de registros de mantenimiento"""
     
     list_display = [
-        'tipo_mantenimiento',
         'vehiculo',
         'fecha_realizacion',
         'kilometraje_realizacion',
+        'get_trabajos_realizados',
         'costo_total',
         'taller'
     ]
     
     list_filter = [
-        'tipo_mantenimiento__categoria',
         'fecha_realizacion',
         'vehiculo__tipo',
         'vehiculo__propietario'
     ]
     
     search_fields = [
-        'tipo_mantenimiento__nombre',
         'vehiculo__marca',
         'vehiculo__modelo',
         'taller',
-        'notas'
+        'notas_generales'
     ]
     
     date_hierarchy = 'fecha_realizacion'
@@ -181,18 +179,14 @@ class RegistroMantenimientoAdmin(admin.ModelAdmin):
     ]
     
     fieldsets = (
-        ('Mantenimiento', {
-            'fields': ('vehiculo', 'tipo_mantenimiento')
+        ('Información Básica', {
+            'fields': ('vehiculo', 'fecha_realizacion', 'kilometraje_realizacion')
         }),
-        ('Detalles de Ejecución', {
-            'fields': ('fecha_realizacion', 'kilometraje_realizacion', 'taller')
-        }),
-        ('Costos', {
-            'fields': ('costo_materiales', 'costo_mano_obra'),
-            'description': 'Especifica los costos de materiales y mano de obra por separado'
+        ('Detalles del Servicio', {
+            'fields': ('taller', 'costo_mano_obra_total')
         }),
         ('Notas', {
-            'fields': ('notas',),
+            'fields': ('notas_generales',),
             'classes': ('wide',)
         }),
         ('Información del Sistema', {
@@ -209,11 +203,59 @@ class RegistroMantenimientoAdmin(admin.ModelAdmin):
             'vehiculo__propietario'
         )
     
+    def get_trabajos_realizados(self, obj):
+        """Mostrar lista de trabajos realizados"""
+        trabajos = [item.tipo_mantenimiento.nombre for item in obj.items.all()]
+        if len(trabajos) > 2:
+            return f"{trabajos[0]}, {trabajos[1]} y {len(trabajos)-2} más"
+        return ", ".join(trabajos) if trabajos else "Sin ítems"
+    get_trabajos_realizados.short_description = "Trabajos Realizados"
+    
     def costo_total(self, obj):
         """Mostrar costo total formateado"""
-        return f"${obj.costo_total:,.2f}"
+        return f"€{obj.costo_total:,.2f}"
     costo_total.short_description = "Costo Total"
-    costo_total.admin_order_field = 'costo_materiales'
+    costo_total.admin_order_field = 'costo_mano_obra_total'
+
+
+class ItemMantenimientoInline(admin.TabularInline):
+    """Inline para editar ítems de mantenimiento"""
+    model = ItemMantenimiento
+    extra = 1
+    min_num = 1
+    fields = ['tipo_mantenimiento', 'descripcion', 'cantidad', 'costo_unitario', 'notas']
+
+
+# Actualizar RegistroMantenimientoAdmin para incluir los inlines
+RegistroMantenimientoAdmin.inlines = [ItemMantenimientoInline]
+
+
+@admin.register(ItemMantenimiento)
+class ItemMantenimientoAdmin(admin.ModelAdmin):
+    """Administración individual de ítems de mantenimiento"""
+    
+    list_display = [
+        'registro',
+        'tipo_mantenimiento',
+        'descripcion',
+        'cantidad',
+        'costo_unitario',
+        'costo_total'
+    ]
+    
+    list_filter = [
+        'tipo_mantenimiento__categoria',
+        'registro__fecha_realizacion'
+    ]
+    
+    search_fields = [
+        'descripcion',
+        'tipo_mantenimiento__nombre',
+        'registro__vehiculo__marca',
+        'registro__vehiculo__modelo'
+    ]
+    
+    readonly_fields = ['costo_total']
 
 
 @admin.register(UserRegistrationRequest)

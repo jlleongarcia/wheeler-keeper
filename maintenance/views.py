@@ -5,8 +5,8 @@ from django.http import JsonResponse
 from django.db.models import Q, Max
 from django.utils import timezone
 from datetime import timedelta
-from .models import Vehiculo, TipoMantenimiento, IntervaloMantenimiento, RegistroMantenimiento
-from .forms import VehiculoForm, RegistroMantenimientoForm, FiltroMantenimientoForm, UserRegistrationForm
+from .models import Vehiculo, TipoMantenimiento, IntervaloMantenimiento, RegistroMantenimiento, ItemMantenimiento
+from .forms import VehiculoForm, RegistroMantenimientoForm, ItemMantenimientoFormSet, FiltroMantenimientoForm, UserRegistrationForm
 
 
 @login_required
@@ -14,23 +14,13 @@ def inicio(request):
     """Página principal mostrando los vehículos del usuario y alertas de mantenimiento"""
     vehiculos = Vehiculo.objects.filter(propietario=request.user)
     
-    # Obtener mantenimientos próximos a vencer
+    # TODO: Implementar lógica de mantenimientos próximos con nuevo modelo
     mantenimientos_proximos = []
-    for vehiculo in vehiculos:
-        registros = RegistroMantenimiento.objects.filter(vehiculo=vehiculo)
-        for registro in registros:
-            es_proximo, mensaje = registro.es_vencimiento_proximo()
-            if es_proximo:
-                mantenimientos_proximos.append({
-                    'registro': registro,
-                    'mensaje': mensaje,
-                    'vehiculo': vehiculo
-                })
     
     # Obtener últimos mantenimientos
     ultimos_mantenimientos = RegistroMantenimiento.objects.filter(
         vehiculo__propietario=request.user
-    ).select_related('vehiculo', 'tipo_mantenimiento')[:5]
+    ).prefetch_related('items__tipo_mantenimiento')[:5]
     
     context = {
         'vehiculos': vehiculos,
@@ -169,20 +159,30 @@ def lista_mantenimientos(request):
 
 @login_required
 def agregar_mantenimiento(request):
-    """Vista para agregar un nuevo registro de mantenimiento"""
+    """Vista para agregar un nuevo registro de mantenimiento con múltiples ítems"""
     if request.method == 'POST':
         form = RegistroMantenimientoForm(request.POST, user=request.user)
-        if form.is_valid():
+        formset = ItemMantenimientoFormSet(request.POST)
+        
+        if form.is_valid() and formset.is_valid():
             mantenimiento = form.save()
-            messages.success(
-                request, 
-                f'Mantenimiento registrado: {mantenimiento.tipo_mantenimiento.nombre} para {mantenimiento.vehiculo}'
-            )
+            formset.instance = mantenimiento
+            items = formset.save()
+            
+            # Crear mensaje de éxito con detalles
+            items_nombres = [item.tipo_mantenimiento.nombre for item in items]
+            if len(items_nombres) == 1:
+                mensaje = f'Mantenimiento registrado: {items_nombres[0]} para {mantenimiento.vehiculo}'
+            else:
+                mensaje = f'Mantenimiento múltiple registrado ({len(items_nombres)} trabajos) para {mantenimiento.vehiculo}'
+            
+            messages.success(request, mensaje)
             return redirect('maintenance:detalle_mantenimiento', mantenimiento_id=mantenimiento.id)
         else:
             messages.error(request, 'Por favor, corrige los errores en el formulario.')
     else:
         form = RegistroMantenimientoForm(user=request.user)
+        formset = ItemMantenimientoFormSet()
         
         # Si se pasa un vehículo por parámetro, preseleccionarlo
         vehiculo_id = request.GET.get('vehiculo')
@@ -190,17 +190,12 @@ def agregar_mantenimiento(request):
             try:
                 vehiculo = Vehiculo.objects.get(id=vehiculo_id, propietario=request.user)
                 form.fields['vehiculo'].initial = vehiculo
-                # Filtrar tipos de mantenimiento para este vehículo
-                tipos_aplicables = TipoMantenimiento.objects.filter(
-                    Q(vehiculos_aplicables='todos') | Q(vehiculos_aplicables=vehiculo.tipo),
-                    activo=True
-                ).order_by('categoria', 'nombre')
-                form.fields['tipo_mantenimiento'].queryset = tipos_aplicables
             except Vehiculo.DoesNotExist:
                 pass
     
     return render(request, 'maintenance/mantenimientos/agregar.html', {
-        'form': form
+        'form': form,
+        'formset': formset
     })
 
 
@@ -213,23 +208,22 @@ def detalle_mantenimiento(request, mantenimiento_id):
         vehiculo__propietario=request.user
     )
     
-    # Calcular próximo mantenimiento
-    proximo_km = mantenimiento.proximo_por_km()
-    proxima_fecha = mantenimiento.proximo_por_fecha()
-    es_proximo, mensaje_alerta = mantenimiento.es_vencimiento_proximo()
+    # Obtener ítems del mantenimiento
+    items = mantenimiento.items.all().select_related('tipo_mantenimiento')
+    
+    # TODO: Implementar lógica de próximos mantenimientos
+    proximos_mantenimientos = []  # mantenimiento.get_proximos_mantenimientos()
     
     return render(request, 'maintenance/mantenimientos/detalle.html', {
         'mantenimiento': mantenimiento,
-        'proximo_km': proximo_km,
-        'proxima_fecha': proxima_fecha,
-        'es_proximo': es_proximo,
-        'mensaje_alerta': mensaje_alerta
+        'items': items,
+        'proximos_mantenimientos': proximos_mantenimientos,
     })
 
 
 @login_required
 def editar_mantenimiento(request, mantenimiento_id):
-    """Vista para editar un mantenimiento existente"""
+    """Vista para editar un mantenimiento existente con sus ítems"""
     mantenimiento = get_object_or_404(
         RegistroMantenimiento,
         id=mantenimiento_id,
@@ -238,17 +232,22 @@ def editar_mantenimiento(request, mantenimiento_id):
     
     if request.method == 'POST':
         form = RegistroMantenimientoForm(request.POST, instance=mantenimiento, user=request.user)
-        if form.is_valid():
+        formset = ItemMantenimientoFormSet(request.POST, instance=mantenimiento)
+        
+        if form.is_valid() and formset.is_valid():
             form.save()
+            formset.save()
             messages.success(request, 'Registro de mantenimiento actualizado correctamente.')
             return redirect('maintenance:detalle_mantenimiento', mantenimiento_id=mantenimiento.id)
         else:
             messages.error(request, 'Por favor, corrige los errores en el formulario.')
     else:
         form = RegistroMantenimientoForm(instance=mantenimiento, user=request.user)
+        formset = ItemMantenimientoFormSet(instance=mantenimiento)
     
     return render(request, 'maintenance/mantenimientos/editar.html', {
         'form': form,
+        'formset': formset,
         'mantenimiento': mantenimiento
     })
 
@@ -263,7 +262,11 @@ def eliminar_mantenimiento(request, mantenimiento_id):
     )
     
     if request.method == 'POST':
-        nombre_mantenimiento = f"{mantenimiento.tipo_mantenimiento.nombre} - {mantenimiento.vehiculo}"
+        items_count = mantenimiento.items.count()
+        if items_count == 1:
+            nombre_mantenimiento = f"{mantenimiento.items.first().tipo_mantenimiento.nombre} - {mantenimiento.vehiculo}"
+        else:
+            nombre_mantenimiento = f"Mantenimiento múltiple ({items_count} trabajos) - {mantenimiento.vehiculo}"
         mantenimiento.delete()
         messages.success(request, f'Registro de mantenimiento "{nombre_mantenimiento}" eliminado correctamente.')
         return redirect('maintenance:lista_mantenimientos')

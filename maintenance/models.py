@@ -233,19 +233,13 @@ class IntervaloMantenimiento(models.Model):
 
 
 class RegistroMantenimiento(models.Model):
-    """Modelo para registrar mantenimientos realizados"""
+    """Modelo para registrar una sesión de mantenimiento en el taller"""
     
     vehiculo = models.ForeignKey(
         Vehiculo,
         on_delete=models.CASCADE,
         verbose_name="Vehículo",
         related_name="mantenimientos"
-    )
-    
-    tipo_mantenimiento = models.ForeignKey(
-        TipoMantenimiento,
-        on_delete=models.CASCADE,
-        verbose_name="Tipo de mantenimiento"
     )
     
     fecha_realizacion = models.DateField(
@@ -258,20 +252,11 @@ class RegistroMantenimiento(models.Model):
         help_text="Kilómetros del vehículo cuando se realizó el mantenimiento"
     )
     
-    costo_materiales = models.DecimalField(
+    costo_mano_obra_total = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name="Costo de materiales",
-        help_text="Costo de repuestos y materiales en euros",
-        null=True,
-        blank=True
-    )
-    
-    costo_mano_obra = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        verbose_name="Costo de mano de obra",
-        help_text="Costo de la mano de obra en euros",
+        verbose_name="Costo total de mano de obra",
+        help_text="Costo total del trabajo realizado en euros",
         null=True,
         blank=True
     )
@@ -283,9 +268,9 @@ class RegistroMantenimiento(models.Model):
         blank=True
     )
     
-    notas = models.TextField(
-        verbose_name="Notas",
-        help_text="Observaciones adicionales sobre el mantenimiento",
+    notas_generales = models.TextField(
+        verbose_name="Notas generales",
+        help_text="Observaciones adicionales sobre toda la sesión de mantenimiento",
         blank=True
     )
     
@@ -300,81 +285,131 @@ class RegistroMantenimiento(models.Model):
         ordering = ['-fecha_realizacion']
     
     def __str__(self):
-        return f"{self.vehiculo} - {self.tipo_mantenimiento.nombre} ({self.fecha_realizacion})"
+        items_count = self.items.count()
+        if items_count == 1:
+            return f"{self.vehiculo} - {self.items.first().tipo_mantenimiento.nombre} ({self.fecha_realizacion})"
+        elif items_count > 1:
+            return f"{self.vehiculo} - Mantenimiento múltiple ({items_count} trabajos) ({self.fecha_realizacion})"
+        else:
+            return f"{self.vehiculo} - Mantenimiento ({self.fecha_realizacion})"
+    
+    @property
+    def costo_materiales_total(self):
+        """Calcula el costo total de todos los materiales/piezas"""
+        return sum(item.costo_total for item in self.items.all())
     
     @property
     def costo_total(self):
         """Calcula el costo total (materiales + mano de obra)"""
-        materiales = self.costo_materiales or 0
-        mano_obra = self.costo_mano_obra or 0
+        materiales = self.costo_materiales_total
+        mano_obra = self.costo_mano_obra_total or 0
         return materiales + mano_obra
     
     def get_desglose_costos(self):
-        """Retorna un diccionario con el desglose de costos"""
+        """Retorna un diccionario con el desglose detallado de costos"""
         return {
-            'materiales': self.costo_materiales or 0,
-            'mano_obra': self.costo_mano_obra or 0,
-            'total': self.costo_total
+            'materiales': self.costo_materiales_total,
+            'mano_obra': self.costo_mano_obra_total or 0,
+            'total': self.costo_total,
+            'items': [
+                {
+                    'descripcion': item.descripcion,
+                    'cantidad': item.cantidad,
+                    'costo_unitario': item.costo_unitario,
+                    'costo_total': item.costo_total
+                }
+                for item in self.items.all()
+            ]
         }
     
-    def get_intervalo_km(self):
-        """Obtiene el intervalo en km (personalizado o por defecto)"""
-        try:
-            intervalo_personalizado = IntervaloMantenimiento.objects.get(
-                vehiculo=self.vehiculo,
-                tipo_mantenimiento=self.tipo_mantenimiento
-            )
-            return intervalo_personalizado.get_intervalo_km()
-        except IntervaloMantenimiento.DoesNotExist:
-            return self.tipo_mantenimiento.intervalo_km
+    def get_tipos_mantenimiento(self):
+        """Retorna una lista de tipos de mantenimiento realizados"""
+        return list(set(item.tipo_mantenimiento for item in self.items.all()))
     
-    def get_intervalo_meses(self):
-        """Obtiene el intervalo en meses (personalizado o por defecto)"""
-        try:
-            intervalo_personalizado = IntervaloMantenimiento.objects.get(
-                vehiculo=self.vehiculo,
-                tipo_mantenimiento=self.tipo_mantenimiento
-            )
-            return intervalo_personalizado.get_intervalo_meses()
-        except IntervaloMantenimiento.DoesNotExist:
-            return self.tipo_mantenimiento.intervalo_meses
-    
-    def proximo_por_km(self):
-        """Calcula el próximo kilometraje para este mantenimiento"""
-        intervalo_km = self.get_intervalo_km()
-        if intervalo_km > 0:
-            return self.kilometraje_realizacion + intervalo_km
-        return None
-    
-    def proximo_por_fecha(self):
-        """Calcula la próxima fecha para este mantenimiento"""
-        intervalo_meses = self.get_intervalo_meses()
-        if intervalo_meses > 0:
-            from dateutil.relativedelta import relativedelta
-            return self.fecha_realizacion + relativedelta(months=intervalo_meses)
-        return None
-    
-    def es_vencimiento_proximo(self, margen_km=1000, margen_dias=30):
-        """Determina si este mantenimiento está próximo a vencer"""
-        from django.utils import timezone
-        from datetime import timedelta
+    def get_proximos_mantenimientos(self):
+        """Obtiene información sobre próximos mantenimientos basados en los items realizados"""
+        proximos = []
+        for item in self.items.all():
+            try:
+                intervalo_personalizado = IntervaloMantenimiento.objects.get(
+                    vehiculo=self.vehiculo,
+                    tipo_mantenimiento=item.tipo_mantenimiento
+                )
+                intervalo_km = intervalo_personalizado.get_intervalo_km()
+                intervalo_meses = intervalo_personalizado.get_intervalo_meses()
+            except IntervaloMantenimiento.DoesNotExist:
+                intervalo_km = item.tipo_mantenimiento.intervalo_km
+                intervalo_meses = item.tipo_mantenimiento.intervalo_meses
+            
+            proximo_info = {
+                'tipo': item.tipo_mantenimiento,
+                'ultimo_km': self.kilometraje_realizacion,
+                'proximo_km': self.kilometraje_realizacion + intervalo_km if intervalo_km > 0 else None,
+                'proximo_fecha': None
+            }
+            
+            if intervalo_meses > 0:
+                from dateutil.relativedelta import relativedelta
+                proximo_info['proximo_fecha'] = self.fecha_realizacion + relativedelta(months=intervalo_meses)
+            
+            proximos.append(proximo_info)
         
-        # Verificar vencimiento por kilómetros
-        proximo_km = self.proximo_por_km()
-        if proximo_km:
-            km_actual = self.vehiculo.kilometraje_actual
-            if km_actual >= (proximo_km - margen_km):
-                return True, f"Próximo en {proximo_km - km_actual} km"
-        
-        # Verificar vencimiento por fecha
-        proxima_fecha = self.proximo_por_fecha()
-        if proxima_fecha:
-            hoy = timezone.now().date()
-            if hoy >= (proxima_fecha - timedelta(days=margen_dias)):
-                dias_restantes = (proxima_fecha - hoy).days
-                return True, f"Próximo en {dias_restantes} días"
-        
-        return False, "No próximo"
+        return proximos
+
+
+class ItemMantenimiento(models.Model):
+    """Modelo para cada trabajo/pieza específica dentro de una sesión de mantenimiento"""
+    
+    registro = models.ForeignKey(
+        RegistroMantenimiento,
+        on_delete=models.CASCADE,
+        related_name="items",
+        verbose_name="Registro de mantenimiento"
+    )
+    
+    tipo_mantenimiento = models.ForeignKey(
+        TipoMantenimiento,
+        on_delete=models.CASCADE,
+        verbose_name="Tipo de trabajo"
+    )
+    
+    descripcion = models.CharField(
+        max_length=200,
+        verbose_name="Descripción del ítem",
+        help_text="Ej: Filtro de aceite Mann W712, Aceite 5W30 Castrol, etc."
+    )
+    
+    cantidad = models.PositiveIntegerField(
+        default=1,
+        verbose_name="Cantidad",
+        help_text="Cantidad de unidades utilizadas"
+    )
+    
+    costo_unitario = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        verbose_name="Costo unitario",
+        help_text="Costo por unidad en euros"
+    )
+    
+    notas = models.TextField(
+        verbose_name="Notas del ítem",
+        help_text="Observaciones específicas de este ítem",
+        blank=True
+    )
+    
+    class Meta:
+        verbose_name = "Ítem de Mantenimiento"
+        verbose_name_plural = "Ítems de Mantenimiento"
+        ordering = ['tipo_mantenimiento__nombre']
+    
+    def __str__(self):
+        return f"{self.descripcion} ({self.cantidad}x {self.costo_unitario}€)"
+    
+    @property
+    def costo_total(self):
+        """Calcula el costo total del ítem (cantidad × precio unitario)"""
+        return self.cantidad * self.costo_unitario
 
 
 class UserRegistrationRequest(models.Model):

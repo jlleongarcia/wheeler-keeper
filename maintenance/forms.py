@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.db import models
 from django.utils.safestring import mark_safe
 from itertools import groupby
-from .models import Vehiculo, TipoMantenimiento, RegistroMantenimiento
+from .models import Vehiculo, TipoMantenimiento, RegistroMantenimiento, ItemMantenimiento
 
 
 def tipo_mantenimiento_categoria_choices(vehiculo=None, include_empty=True):
@@ -161,20 +161,21 @@ class VehiculoForm(forms.ModelForm):
 
 
 class RegistroMantenimientoForm(forms.ModelForm):
-    """Formulario para registrar un nuevo mantenimiento"""
+    """Formulario para registrar una sesión de mantenimiento"""
     
-    # Campo personalizado para tipos de mantenimiento agrupados
-    tipo_mantenimiento = TipoMantenimientoModelChoiceField(
-        queryset=TipoMantenimiento.objects.filter(activo=True),
-        empty_label="---------",
-        widget=forms.Select(attrs={'class': 'form-control', 'required': True})
-    )
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar vehículos por propietario
+        if self.user:
+            self.fields['vehiculo'].queryset = Vehiculo.objects.filter(propietario=self.user)
     
     class Meta:
         model = RegistroMantenimiento
         fields = [
-            'vehiculo', 'tipo_mantenimiento', 'fecha_realizacion', 
-            'kilometraje_realizacion', 'costo_materiales', 'costo_mano_obra', 'taller', 'notas'
+            'vehiculo', 'fecha_realizacion', 'kilometraje_realizacion', 
+            'costo_mano_obra_total', 'taller', 'notas_generales'
         ]
         widgets = {
             'vehiculo': forms.Select(
@@ -198,18 +199,10 @@ class RegistroMantenimientoForm(forms.ModelForm):
                     'required': True
                 }
             ),
-            'costo_materiales': forms.NumberInput(
+            'costo_mano_obra_total': forms.NumberInput(
                 attrs={
                     'class': 'form-control',
-                    'placeholder': '0.00 (repuestos, aceite, filtros...)',
-                    'min': 0,
-                    'step': 0.01
-                }
-            ),
-            'costo_mano_obra': forms.NumberInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': '0.00 (trabajo del mecánico)',
+                    'placeholder': '0.00 (costo total de mano de obra)',
                     'min': 0,
                     'step': 0.01
                 }
@@ -220,11 +213,11 @@ class RegistroMantenimientoForm(forms.ModelForm):
                     'placeholder': 'Nombre del taller o lugar'
                 }
             ),
-            'notas': forms.Textarea(
+            'notas_generales': forms.Textarea(
                 attrs={
                     'class': 'form-control',
                     'rows': 3,
-                    'placeholder': 'Observaciones, piezas cambiadas, etc.'
+                    'placeholder': 'Observaciones generales sobre la sesión de mantenimiento'
                 }
             ),
         }
@@ -464,3 +457,64 @@ class UserRegistrationForm(forms.Form):
         )
         
         return request
+
+
+class ItemMantenimientoForm(forms.ModelForm):
+    """Formulario para cada ítem individual de mantenimiento"""
+    
+    # Campo personalizado para tipos de mantenimiento agrupados
+    tipo_mantenimiento = TipoMantenimientoModelChoiceField(
+        queryset=TipoMantenimiento.objects.filter(activo=True),
+        empty_label="---------",
+        widget=forms.Select(attrs={'class': 'form-control item-tipo'})
+    )
+    
+    class Meta:
+        model = ItemMantenimiento
+        fields = ['tipo_mantenimiento', 'descripcion', 'cantidad', 'costo_unitario', 'notas']
+        widgets = {
+            'descripcion': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Ej: Filtro de aceite Mann W712',
+                    'required': True
+                }
+            ),
+            'cantidad': forms.NumberInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': '1',
+                    'min': 1,
+                    'value': 1
+                }
+            ),
+            'costo_unitario': forms.NumberInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': '0.00',
+                    'min': 0,
+                    'step': 0.01,
+                    'required': True
+                }
+            ),
+            'notas': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Notas específicas del ítem (opcional)'
+                }
+            )
+        }
+
+
+# Formset para manejar múltiples ítems
+from django.forms import inlineformset_factory
+
+ItemMantenimientoFormSet = inlineformset_factory(
+    RegistroMantenimiento,
+    ItemMantenimiento,
+    form=ItemMantenimientoForm,
+    extra=1,  # Número de formularios vacíos por defecto
+    min_num=1,  # Mínimo número de formularios
+    validate_min=True,
+    can_delete=True
+)
