@@ -376,7 +376,8 @@ class ItemMantenimiento(models.Model):
     descripcion = models.CharField(
         max_length=200,
         verbose_name="Descripción del ítem",
-        help_text="Ej: Filtro de aceite Mann W712, Aceite 5W30 Castrol, etc."
+        help_text="Ej: Filtro de aceite Mann W712, Aceite 5W30 Castrol, etc.",
+        blank=True
     )
     
     cantidad = models.PositiveIntegerField(
@@ -390,12 +391,6 @@ class ItemMantenimiento(models.Model):
         decimal_places=2,
         verbose_name="Costo unitario",
         help_text="Costo por unidad en euros"
-    )
-    
-    notas = models.TextField(
-        verbose_name="Notas del ítem",
-        help_text="Observaciones específicas de este ítem",
-        blank=True
     )
     
     class Meta:

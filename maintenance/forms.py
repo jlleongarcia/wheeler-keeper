@@ -471,13 +471,12 @@ class ItemMantenimientoForm(forms.ModelForm):
     
     class Meta:
         model = ItemMantenimiento
-        fields = ['tipo_mantenimiento', 'descripcion', 'cantidad', 'costo_unitario', 'notas']
+        fields = ['tipo_mantenimiento', 'descripcion', 'cantidad', 'costo_unitario']
         widgets = {
             'descripcion': forms.TextInput(
                 attrs={
                     'class': 'form-control',
-                    'placeholder': 'Ej: Filtro de aceite Mann W712',
-                    'required': True
+                    'placeholder': 'Ej: Filtro de aceite Mann W712 (opcional)'
                 }
             ),
             'cantidad': forms.NumberInput(
@@ -495,12 +494,6 @@ class ItemMantenimientoForm(forms.ModelForm):
                     'min': 0,
                     'step': 0.01,
                     'required': True
-                }
-            ),
-            'notas': forms.TextInput(
-                attrs={
-                    'class': 'form-control',
-                    'placeholder': 'Notas específicas del ítem (opcional)'
                 }
             )
         }

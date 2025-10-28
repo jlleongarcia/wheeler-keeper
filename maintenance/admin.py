@@ -223,7 +223,7 @@ class ItemMantenimientoInline(admin.TabularInline):
     model = ItemMantenimiento
     extra = 1
     min_num = 1
-    fields = ['tipo_mantenimiento', 'descripcion', 'cantidad', 'costo_unitario', 'notas']
+    fields = ['tipo_mantenimiento', 'descripcion', 'cantidad', 'costo_unitario']
 
 
 # Actualizar RegistroMantenimientoAdmin para incluir los inlines

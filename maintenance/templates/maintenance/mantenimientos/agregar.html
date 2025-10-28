@@ -116,7 +116,7 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="mb-3">
-                                                <label class="form-label">Descripción *</label>
+                                                <label class="form-label">Descripción</label>
                                                 {{ form.descripcion }}
                                                 {% if form.descripcion.errors %}
                                                     <div class="text-danger">{{ form.descripcion.errors.0 }}</div>
@@ -126,7 +126,7 @@
                                     </div>
                                     
                                     <div class="row">
-                                        <div class="col-md-3">
+                                        <div class="col-md-4">
                                             <div class="mb-3">
                                                 <label class="form-label">Cantidad</label>
                                                 {{ form.cantidad }}
@@ -135,7 +135,7 @@
                                                 {% endif %}
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-4">
                                             <div class="mb-3">
                                                 <label class="form-label">Costo Unitario (€) *</label>
                                                 {{ form.costo_unitario }}
@@ -144,19 +144,10 @@
                                                 {% endif %}
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-4">
                                             <div class="mb-3">
                                                 <label class="form-label">Costo Total</label>
                                                 <input type="text" class="form-control costo-total-display" readonly placeholder="0.00 €">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="mb-3">
-                                                <label class="form-label">Notas del Ítem</label>
-                                                {{ form.notas }}
-                                                {% if form.notas.errors %}
-                                                    <div class="text-danger">{{ form.notas.errors.0 }}</div>
-                                                {% endif %}
                                             </div>
                                         </div>
                                     </div>

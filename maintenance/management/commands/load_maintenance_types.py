@@ -221,6 +221,24 @@ class Command(BaseCommand):
                 'intervalo_meses': 12,
                 'vehiculos_aplicables': 'todos'
             },
+
+            # Luces
+            {
+                'nombre': 'Cambio de bombillas',
+                'descripcion': 'Sustitución de bombillas (general)',
+                'categoria': 'Luces',
+                'intervalo_km': 0,
+                'intervalo_meses': 0,
+                'vehiculos_aplicables': 'todos'
+            },
+            {
+                'nombre': 'Pulimiento de faros',
+                'descripcion': 'Pulimiento y restauración de faros delanteros',
+                'categoria': 'Luces',
+                'intervalo_km': 0,
+                'intervalo_meses': 12,
+                'vehiculos_aplicables': 'todos'
+            }
         ]
         
         created_count = 0
