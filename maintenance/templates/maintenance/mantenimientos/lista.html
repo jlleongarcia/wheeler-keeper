@@ -56,10 +56,26 @@
                             <div class="card h-100">
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <h6 class="mb-0">
-                                        <span class="badge bg-primary me-2">
-                                            {{ mantenimiento.tipo_mantenimiento.get_categoria_display }}
-                                        </span>
-                                        {{ mantenimiento.tipo_mantenimiento.nombre }}
+                                        {% with mantenimiento.items.all as items %}
+                                            {% if items %}
+                                                {% if items|length == 1 %}
+                                                    <span class="badge bg-primary me-2">
+                                                        {{ items.0.tipo_mantenimiento.get_categoria_display }}
+                                                    </span>
+                                                    {{ items.0.tipo_mantenimiento.nombre }}
+                                                {% else %}
+                                                    <span class="badge bg-secondary me-2">
+                                                        Múltiple
+                                                    </span>
+                                                    Mantenimiento múltiple ({{ items|length }} ítems)
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="badge bg-warning me-2">
+                                                    Sin ítems
+                                                </span>
+                                                Mantenimiento sin ítems
+                                            {% endif %}
+                                        {% endwith %}
                                     </h6>
                                     <small class="text-muted">{{ mantenimiento.fecha_realizacion }}</small>
                                 </div>
@@ -76,11 +92,11 @@
                                             {% if mantenimiento.costo_total %}
                                                 <strong>Costo Total:</strong><br>
                                                 {{ mantenimiento.costo_total|floatformat:2 }} €
-                                                {% if mantenimiento.costo_materiales or mantenimiento.costo_mano_obra %}
+                                                {% if mantenimiento.costo_materiales_total or mantenimiento.costo_mano_obra_total %}
                                                     <br><small class="text-muted">
-                                                        {% if mantenimiento.costo_materiales %}Mat: {{ mantenimiento.costo_materiales|floatformat:2 }}€{% endif %}
-                                                        {% if mantenimiento.costo_materiales and mantenimiento.costo_mano_obra %} | {% endif %}
-                                                        {% if mantenimiento.costo_mano_obra %}MO: {{ mantenimiento.costo_mano_obra|floatformat:2 }}€{% endif %}
+                                                        {% if mantenimiento.costo_materiales_total %}Mat: {{ mantenimiento.costo_materiales_total|floatformat:2 }}€{% endif %}
+                                                        {% if mantenimiento.costo_materiales_total and mantenimiento.costo_mano_obra_total %} | {% endif %}
+                                                        {% if mantenimiento.costo_mano_obra_total %}MO: {{ mantenimiento.costo_mano_obra_total|floatformat:2 }}€{% endif %}
                                                     </small>
                                                 {% endif %}
                                             {% else %}
@@ -94,10 +110,10 @@
                                             <strong><i class="bi bi-geo-alt"></i> Taller:</strong> {{ mantenimiento.taller }}
                                         </div>
                                     {% endif %}
-                                    {% if mantenimiento.notas %}
+                                    {% if mantenimiento.notas_generales %}
                                         <div class="mt-2">
                                             <strong><i class="bi bi-file-text"></i> Notas:</strong><br>
-                                            <small class="text-muted">{{ mantenimiento.notas|truncatewords:15 }}</small>
+                                            <small class="text-muted">{{ mantenimiento.notas_generales|truncatewords:15 }}</small>
                                         </div>
                                     {% endif %}
                                 </div>

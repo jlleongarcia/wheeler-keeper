@@ -130,7 +130,7 @@ def lista_mantenimientos(request):
     
     mantenimientos = RegistroMantenimiento.objects.filter(
         vehiculo__propietario=request.user
-    ).select_related('vehiculo', 'tipo_mantenimiento')
+    ).select_related('vehiculo').prefetch_related('items__tipo_mantenimiento')
     
     if filtro_form.is_valid():
         vehiculo = filtro_form.cleaned_data.get('vehiculo')
@@ -139,7 +139,7 @@ def lista_mantenimientos(request):
         
         categoria = filtro_form.cleaned_data.get('categoria')
         if categoria:
-            mantenimientos = mantenimientos.filter(tipo_mantenimiento__categoria=categoria)
+            mantenimientos = mantenimientos.filter(items__tipo_mantenimiento__categoria=categoria).distinct()
         
         fecha_desde = filtro_form.cleaned_data.get('fecha_desde')
         if fecha_desde:
@@ -182,7 +182,7 @@ def agregar_mantenimiento(request):
             messages.error(request, 'Por favor, corrige los errores en el formulario.')
     else:
         form = RegistroMantenimientoForm(user=request.user)
-        formset = ItemMantenimientoFormSet()
+        formset = ItemMantenimientoFormSet(queryset=ItemMantenimiento.objects.none())
         
         # Si se pasa un vehículo por parámetro, preseleccionarlo
         vehiculo_id = request.GET.get('vehiculo')

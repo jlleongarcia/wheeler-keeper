@@ -506,7 +506,7 @@ ItemMantenimientoFormSet = inlineformset_factory(
     RegistroMantenimiento,
     ItemMantenimiento,
     form=ItemMantenimientoForm,
-    extra=5,  # Número de formularios vacíos por defecto
+    extra=20,  # Número de formularios vacíos por defecto
     max_num=20,  # Máximo número de formularios permitidos
     min_num=1,  # Mínimo número de formularios
     validate_min=True,
