@@ -265,12 +265,86 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         totalFormsInput.value = forms.length;
+        
+        // Reasignar event listeners para los nuevos campos
+        attachFormEventListeners();
         calculateTotals();
+        
+        // Actualizar estado del botón añadir
+        if (typeof updateAddButton === 'function') {
+            updateAddButton();
+        }
+    }
+    
+    // Función para asignar event listeners a los campos de formularios
+    function attachFormEventListeners() {
+        const quantityInputs = document.querySelectorAll('input[id*="cantidad"]');
+        const priceInputs = document.querySelectorAll('input[id*="precio_unitario"]');
+        
+        quantityInputs.forEach(function(input) {
+            input.removeEventListener('input', calculateTotals);
+            input.addEventListener('input', calculateTotals);
+        });
+        
+        priceInputs.forEach(function(input) {
+            input.removeEventListener('input', calculateTotals);
+            input.addEventListener('input', calculateTotals);
+        });
+    }
+    
+    // Función para crear un formulario nuevo dinámicamente
+    function createNewFormDynamically() {
+        const visibleForms = formsetContainer.querySelectorAll('.formset-form:not([style*="display: none"])');
+        const maxForms = parseInt(document.getElementById('id_items-MAX_NUM_FORMS').value) || 20;
+        
+        if (visibleForms.length >= maxForms) {
+            return; // No crear si ya estamos en el límite
+        }
+        
+        // Clonar el primer formulario como template
+        const firstForm = formsetContainer.querySelector('.formset-form');
+        const newForm = firstForm.cloneNode(true);
+        
+        // Limpiar los valores del nuevo formulario
+        const inputs = newForm.querySelectorAll('input:not([type="hidden"]), select, textarea');
+        inputs.forEach(function(input) {
+            if (input.type !== 'hidden') {
+                input.value = '';
+            }
+        });
+        
+        // Mostrar el formulario
+        newForm.style.display = 'block';
+        
+        // Añadir botón de eliminar
+        const headerDiv = newForm.querySelector('.d-flex.justify-content-between');
+        if (headerDiv && !headerDiv.querySelector('.remove-form')) {
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'btn btn-outline-danger btn-sm remove-form';
+            removeButton.innerHTML = '<i class="bi bi-trash"></i> Eliminar';
+            removeButton.addEventListener('click', function() {
+                newForm.remove();
+                updateFormIndices();
+            });
+            headerDiv.appendChild(removeButton);
+        }
+        
+        // Añadir el nuevo formulario al contenedor
+        formsetContainer.appendChild(newForm);
     }
     
     // Función para añadir nuevo formulario
     addButton.addEventListener('click', function() {
         const hiddenForms = formsetContainer.querySelectorAll('.formset-form[style*="display: none"]');
+        const visibleForms = formsetContainer.querySelectorAll('.formset-form:not([style*="display: none"])');
+        const maxForms = parseInt(document.getElementById('id_items-MAX_NUM_FORMS').value) || 20;
+        
+        // Verificar si ya hemos alcanzado el límite máximo
+        if (visibleForms.length >= maxForms) {
+            alert(`Solo se pueden añadir máximo ${maxForms} ítems de mantenimiento.`);
+            return;
+        }
         
         if (hiddenForms.length > 0) {
             // Mostrar el primer formulario oculto
@@ -285,11 +359,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Limpiar valores del formulario oculto
                     const inputs = formToShow.querySelectorAll('input:not([type="hidden"]), select, textarea');
                     inputs.forEach(function(input) {
-                        input.value = '';
+                        if (input.type !== 'hidden') {
+                            input.value = '';
+                        }
                     });
                     updateFormIndices();
                 });
             }
+        } else {
+            // Si no hay formularios ocultos, crear uno nuevo dinámicamente
+            createNewFormDynamically();
         }
         
         updateFormIndices();
@@ -316,7 +395,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Mostrar solo el primer formulario inicialmente
+    // Mostrar el primer formulario inicialmente y ocultar los extra
     const allForms = formsetContainer.querySelectorAll('.formset-form');
     allForms.forEach(function(form, index) {
         if (index === 0) {
@@ -326,8 +405,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Inicializar cálculos
+    // Actualizar el botón "Añadir otro ítem" para mostrar el estado
+    function updateAddButton() {
+        const visibleForms = formsetContainer.querySelectorAll('.formset-form:not([style*="display: none"])');
+        const hiddenForms = formsetContainer.querySelectorAll('.formset-form[style*="display: none"]');
+        const maxForms = parseInt(document.getElementById('id_items-MAX_NUM_FORMS').value) || 20;
+        
+        if (visibleForms.length >= maxForms || hiddenForms.length === 0) {
+            addButton.disabled = true;
+            addButton.innerHTML = '<i class="bi bi-plus-circle"></i> Límite máximo alcanzado';
+        } else {
+            addButton.disabled = false;
+            addButton.innerHTML = '<i class="bi bi-plus-circle"></i> Añadir otro ítem';
+        }
+    }
+    
+    // Inicializar event listeners y cálculos
+    attachFormEventListeners();
     updateFormIndices();
+    updateAddButton();
 });
 </script>
 

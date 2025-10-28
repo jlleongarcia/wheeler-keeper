@@ -40,6 +40,14 @@ class Command(BaseCommand):
                 'intervalo_meses': 12,
                 'vehiculos_aplicables': 'todos'
             },
+            {
+                'nombre': 'Cambio de bomba de agua',
+                'descripcion': 'Sustitución de bomba de agua',
+                'categoria': 'Motor',
+                'intervalo_km': 120000,
+                'intervalo_meses': 60,
+                'vehiculos_aplicables': 'todos'
+            },
             
             # Transmisión
             {
