@@ -155,7 +155,7 @@ class RegistroMantenimientoAdmin(admin.ModelAdmin):
         'vehiculo',
         'fecha_realizacion',
         'kilometraje_realizacion',
-        'costo',
+        'costo_total',
         'taller'
     ]
     
@@ -185,7 +185,11 @@ class RegistroMantenimientoAdmin(admin.ModelAdmin):
             'fields': ('vehiculo', 'tipo_mantenimiento')
         }),
         ('Detalles de Ejecución', {
-            'fields': ('fecha_realizacion', 'kilometraje_realizacion', 'costo', 'taller')
+            'fields': ('fecha_realizacion', 'kilometraje_realizacion', 'taller')
+        }),
+        ('Costos', {
+            'fields': ('costo_materiales', 'costo_mano_obra'),
+            'description': 'Especifica los costos de materiales y mano de obra por separado'
         }),
         ('Notas', {
             'fields': ('notas',),
@@ -204,6 +208,12 @@ class RegistroMantenimientoAdmin(admin.ModelAdmin):
             'tipo_mantenimiento',
             'vehiculo__propietario'
         )
+    
+    def costo_total(self, obj):
+        """Mostrar costo total formateado"""
+        return f"${obj.costo_total:,.2f}"
+    costo_total.short_description = "Costo Total"
+    costo_total.admin_order_field = 'costo_materiales'
 
 
 @admin.register(UserRegistrationRequest)

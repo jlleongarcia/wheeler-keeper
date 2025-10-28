@@ -196,8 +196,8 @@
                                                     <p class="card-text text-muted small">
                                                         <i class="bi bi-car-front"></i> {{ mantenimiento.vehiculo }}<br>
                                                         <i class="bi bi-speedometer"></i> {{ mantenimiento.kilometraje_realizacion|floatformat:0 }} km
-                                                        {% if mantenimiento.costo %}
-                                                            <br><i class="bi bi-currency-euro"></i> {{ mantenimiento.costo|floatformat:2 }} €
+                                                        {% if mantenimiento.costo_total %}
+                                                            <br><i class="bi bi-currency-euro"></i> {{ mantenimiento.costo_total|floatformat:2 }} €
                                                         {% endif %}
                                                     </p>
                                                 </div>

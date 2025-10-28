@@ -162,7 +162,7 @@
                                         <strong>{{ mantenimiento.tipo_mantenimiento.nombre }}</strong>
                                         <br><small class="text-muted">
                                             {{ mantenimiento.fecha_realizacion }} • {{ mantenimiento.kilometraje_realizacion|floatformat:0 }} km
-                                            {% if mantenimiento.costo %} • {{ mantenimiento.costo|floatformat:2 }} €{% endif %}
+                                            {% if mantenimiento.costo_total %} • {{ mantenimiento.costo_total|floatformat:2 }} €{% endif %}
                                         </small>
                                     </div>
                                     <a href="{% url 'maintenance:detalle_mantenimiento' mantenimiento.id %}" 

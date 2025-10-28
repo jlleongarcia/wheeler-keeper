@@ -174,7 +174,7 @@ class RegistroMantenimientoForm(forms.ModelForm):
         model = RegistroMantenimiento
         fields = [
             'vehiculo', 'tipo_mantenimiento', 'fecha_realizacion', 
-            'kilometraje_realizacion', 'costo', 'taller', 'notas'
+            'kilometraje_realizacion', 'costo_materiales', 'costo_mano_obra', 'taller', 'notas'
         ]
         widgets = {
             'vehiculo': forms.Select(
@@ -198,10 +198,18 @@ class RegistroMantenimientoForm(forms.ModelForm):
                     'required': True
                 }
             ),
-            'costo': forms.NumberInput(
+            'costo_materiales': forms.NumberInput(
                 attrs={
                     'class': 'form-control',
-                    'placeholder': '0.00',
+                    'placeholder': '0.00 (repuestos, aceite, filtros...)',
+                    'min': 0,
+                    'step': 0.01
+                }
+            ),
+            'costo_mano_obra': forms.NumberInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': '0.00 (trabajo del mecánico)',
                     'min': 0,
                     'step': 0.01
                 }

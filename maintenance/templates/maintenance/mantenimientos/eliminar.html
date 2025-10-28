@@ -34,9 +34,16 @@
                                 {{ mantenimiento.kilometraje_realizacion|floatformat:0 }} km
                             </div>
                             <div class="col-6 mt-2">
-                                {% if mantenimiento.costo %}
-                                    <strong>Costo:</strong><br>
-                                    {{ mantenimiento.costo|floatformat:2 }} €
+                                {% if mantenimiento.costo_total %}
+                                    <strong>Costo Total:</strong><br>
+                                    {{ mantenimiento.costo_total|floatformat:2 }} €
+                                    {% if mantenimiento.costo_materiales or mantenimiento.costo_mano_obra %}
+                                        <br><small class="text-muted">
+                                            {% if mantenimiento.costo_materiales %}Materiales: {{ mantenimiento.costo_materiales|floatformat:2 }}€{% endif %}
+                                            {% if mantenimiento.costo_materiales and mantenimiento.costo_mano_obra %}<br>{% endif %}
+                                            {% if mantenimiento.costo_mano_obra %}Mano de obra: {{ mantenimiento.costo_mano_obra|floatformat:2 }}€{% endif %}
+                                        </small>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>

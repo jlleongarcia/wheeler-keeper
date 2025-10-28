@@ -258,11 +258,20 @@ class RegistroMantenimiento(models.Model):
         help_text="Kilómetros del vehículo cuando se realizó el mantenimiento"
     )
     
-    costo = models.DecimalField(
+    costo_materiales = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name="Costo",
-        help_text="Costo del mantenimiento en euros",
+        verbose_name="Costo de materiales",
+        help_text="Costo de repuestos y materiales en euros",
+        null=True,
+        blank=True
+    )
+    
+    costo_mano_obra = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Costo de mano de obra",
+        help_text="Costo de la mano de obra en euros",
         null=True,
         blank=True
     )
@@ -292,6 +301,21 @@ class RegistroMantenimiento(models.Model):
     
     def __str__(self):
         return f"{self.vehiculo} - {self.tipo_mantenimiento.nombre} ({self.fecha_realizacion})"
+    
+    @property
+    def costo_total(self):
+        """Calcula el costo total (materiales + mano de obra)"""
+        materiales = self.costo_materiales or 0
+        mano_obra = self.costo_mano_obra or 0
+        return materiales + mano_obra
+    
+    def get_desglose_costos(self):
+        """Retorna un diccionario con el desglose de costos"""
+        return {
+            'materiales': self.costo_materiales or 0,
+            'mano_obra': self.costo_mano_obra or 0,
+            'total': self.costo_total
+        }
     
     def get_intervalo_km(self):
         """Obtiene el intervalo en km (personalizado o por defecto)"""
