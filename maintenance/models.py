@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from decimal import Decimal
 
 
 class Vehiculo(models.Model):
@@ -302,21 +303,22 @@ class RegistroMantenimiento(models.Model):
     @property
     def costo_materiales_total(self):
         """Calcula el costo total de todos los materiales/piezas"""
-        return sum(item.costo_total for item in self.items.all())
+        total = sum(item.costo_total for item in self.items.all())
+        return Decimal(str(total)) if total else Decimal('0.00')
     
     @property
     def costo_subtotal(self):
         """Calcula el subtotal (materiales + mano de obra) sin IVA"""
         materiales = self.costo_materiales_total
-        mano_obra = self.costo_mano_obra_total or 0
+        mano_obra = self.costo_mano_obra_total or Decimal('0.00')
         return materiales + mano_obra
     
     @property
     def costo_iva(self):
         """Calcula el importe del IVA (21%)"""
         if self.iva_incluido:
-            return 0
-        return self.costo_subtotal * 0.21
+            return Decimal('0.00')
+        return self.costo_subtotal * Decimal('0.21')
     
     @property
     def costo_total(self):
@@ -329,7 +331,7 @@ class RegistroMantenimiento(models.Model):
         """Retorna un diccionario con el desglose detallado de costos"""
         return {
             'materiales': self.costo_materiales_total,
-            'mano_obra': self.costo_mano_obra_total or 0,
+            'mano_obra': self.costo_mano_obra_total or Decimal('0.00'),
             'subtotal': self.costo_subtotal,
             'iva_incluido': self.iva_incluido,
             'iva_importe': self.costo_iva,

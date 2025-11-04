@@ -514,7 +514,7 @@ ItemMantenimientoFormSet = inlineformset_factory(
     form=ItemMantenimientoForm,
     extra=20,  # Número de formularios vacíos por defecto
     max_num=20,  # Máximo número de formularios permitidos
-    min_num=1,  # Mínimo número de formularios
-    validate_min=True,
+    min_num=1,  # Mínimo 1 ítem requerido
+    validate_min=True,  # Validar que se requiera al menos 1 ítem
     can_delete=False  # Deshabilitamos el DELETE automático ya que tenemos botones personalizados
 )

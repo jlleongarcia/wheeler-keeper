@@ -287,6 +287,34 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Función para actualizar índices de formularios
+    // Función para manejar validación de campos según visibilidad
+    function updateRequiredFields() {
+        const allForms = formsetContainer.querySelectorAll('.formset-form');
+        allForms.forEach(function(form) {
+            const isVisible = form.style.display !== 'none';
+            
+            // Solo campos que realmente deben ser requeridos
+            const tipoField = form.querySelector('[name*="tipo_mantenimiento"]');
+            const costoField = form.querySelector('[name*="costo_unitario"]');
+            
+            if (tipoField) {
+                if (isVisible) {
+                    tipoField.setAttribute('required', '');
+                } else {
+                    tipoField.removeAttribute('required');
+                }
+            }
+            
+            if (costoField) {
+                if (isVisible) {
+                    costoField.setAttribute('required', '');
+                } else {
+                    costoField.removeAttribute('required');
+                }
+            }
+        });
+    }
+
     function updateFormIndices() {
         const forms = formsetContainer.querySelectorAll('.formset-form:not([style*="display: none"])');
         forms.forEach(function(form, index) {
@@ -315,6 +343,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         totalFormsInput.value = forms.length;
+        
+        // Actualizar campos requeridos según visibilidad
+        updateRequiredFields();
         
         // Reasignar event listeners para los nuevos campos
         attachFormEventListeners();
@@ -376,12 +407,14 @@ document.addEventListener('DOMContentLoaded', function() {
             removeButton.addEventListener('click', function() {
                 newForm.remove();
                 updateFormIndices();
+                updateRequiredFields();
             });
             headerDiv.appendChild(removeButton);
         }
         
         // Añadir el nuevo formulario al contenedor
         formsetContainer.appendChild(newForm);
+        updateRequiredFields();
     }
     
     // Función para añadir nuevo formulario
@@ -414,6 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                     updateFormIndices();
+                    updateRequiredFields();
                 });
             }
         } else {
@@ -422,6 +456,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         updateFormIndices();
+        updateRequiredFields();
     });
     
     // Event listeners para campos que afectan el cálculo
@@ -476,9 +511,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Validación del formulario antes del envío
+    const form = document.getElementById('maintenanceForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Verificar que haya al menos un formulario visible
+            const visibleForms = document.querySelectorAll('.formset-form:not([style*="display: none"])');
+            
+            if (visibleForms.length === 0) {
+                e.preventDefault();
+                alert('Por favor, añade al menos un ítem de mantenimiento.');
+                return false;
+            }
+        });
+    }
+    
     // Inicializar event listeners y cálculos
     attachFormEventListeners();
     updateFormIndices();
+    updateRequiredFields();
     updateAddButton();
 });
 </script>

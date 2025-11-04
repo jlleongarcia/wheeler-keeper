@@ -179,6 +179,21 @@ def agregar_mantenimiento(request):
             messages.success(request, mensaje)
             return redirect('maintenance:detalle_mantenimiento', mantenimiento_id=mantenimiento.id)
         else:
+            # Mostrar errores específicos al usuario
+            if not form.is_valid():
+                for field, errors in form.errors.items():
+                    messages.error(request, f'{field}: {errors[0]}')
+            
+            if not formset.is_valid():
+                for i, form_errors in enumerate(formset.errors):
+                    if form_errors:
+                        for field, errors in form_errors.items():
+                            messages.error(request, f'Ítem {i+1} - {field}: {errors[0]}')
+                
+                if formset.non_form_errors():
+                    for error in formset.non_form_errors():
+                        messages.error(request, f'Error general: {error}')
+            
             messages.error(request, 'Por favor, corrige los errores en el formulario.')
     else:
         form = RegistroMantenimientoForm(user=request.user)
