@@ -66,6 +66,14 @@ class Command(BaseCommand):
                 'intervalo_meses': 0,
                 'vehiculos_aplicables': 'todos'
             },
+            {
+                'nombre': 'Cambio de guardapolvos de transmisión',
+                'descripcion': 'Sustitución de guardapolvos de palieres y juntas homocinéticas',
+                'categoria': 'Transmision',
+                'intervalo_km': 80000,
+                'intervalo_meses': 0,
+                'vehiculos_aplicables': 'todos'
+            },
             
             # Frenos
             {
@@ -108,7 +116,7 @@ class Command(BaseCommand):
                 'nombre': 'Cambio de filtro de combustible',
                 'descripcion': 'Sustitución del filtro de combustible',
                 'categoria': 'Filtros',
-                'intervalo_km': 30000,
+                'intervalo_km': 15000,
                 'intervalo_meses': 24,
                 'vehiculos_aplicables': 'todos'
             },
@@ -124,7 +132,7 @@ class Command(BaseCommand):
                 'nombre': 'Cambio de filtro de aire',
                 'descripcion': 'Sustitución del filtro de aire del motor',
                 'categoria': 'Filtros',
-                'intervalo_km': 20000,
+                'intervalo_km': 15000,
                 'intervalo_meses': 12,
                 'vehiculos_aplicables': 'todos'
             },
@@ -150,7 +158,7 @@ class Command(BaseCommand):
                 'nombre': 'Cambio de guardapolvos de suspensión',
                 'descripcion': 'Sustitución de guardapolvos de amortiguadores y rótulas',
                 'categoria': 'Suspension',
-                'intervalo_km': 60000,
+                'intervalo_km': 15000,
                 'intervalo_meses': 0,
                 'vehiculos_aplicables': 'todos'
             },
@@ -175,15 +183,6 @@ class Command(BaseCommand):
                 'vehiculos_aplicables': 'todos'
             },
             
-            {
-                'nombre': 'Cambio de guardapolvos de transmisión',
-                'descripcion': 'Sustitución de guardapolvos de palieres y juntas homocinéticas',
-                'categoria': 'Transmision',
-                'intervalo_km': 80000,
-                'intervalo_meses': 0,
-                'vehiculos_aplicables': 'todos'
-            },
-            
             # Específicos para motos
             {
                 'nombre': 'Cambio de cadena y piñones',
@@ -197,7 +196,7 @@ class Command(BaseCommand):
                 'nombre': 'Ajuste de válvulas',
                 'descripcion': 'Ajuste del juego de válvulas del motor',
                 'categoria': 'Motor',
-                'intervalo_km': 12000,
+                'intervalo_km': 15000,
                 'intervalo_meses': 0,
                 'vehiculos_aplicables': 'moto'
             },
@@ -250,6 +249,7 @@ class Command(BaseCommand):
         ]
         
         created_count = 0
+        updated_count = 0
         for tipo_data in tipos_mantenimiento:
             tipo, created = TipoMantenimiento.objects.get_or_create(
                 nombre=tipo_data['nombre'],
@@ -261,12 +261,26 @@ class Command(BaseCommand):
                     self.style.SUCCESS(f'Creado: {tipo.nombre}')
                 )
             else:
-                self.stdout.write(
-                    self.style.WARNING(f'Ya existe: {tipo.nombre}')
-                )
+                # Actualizar campos si ya existe
+                updated = False
+                for field, value in tipo_data.items():
+                    if field != 'nombre' and getattr(tipo, field) != value:
+                        setattr(tipo, field, value)
+                        updated = True
+                
+                if updated:
+                    tipo.save()
+                    updated_count += 1
+                    self.stdout.write(
+                        self.style.SUCCESS(f'Actualizado: {tipo.nombre}')
+                    )
+                else:
+                    self.stdout.write(
+                        self.style.WARNING(f'Sin cambios: {tipo.nombre}')
+                    )
         
         self.stdout.write(
             self.style.SUCCESS(
-                f'Proceso completado. {created_count} tipos de mantenimiento creados.'
+                f'Proceso completado. {created_count} tipos creados, {updated_count} actualizados.'
             )
         )

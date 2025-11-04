@@ -76,7 +76,7 @@ class Vehiculo(models.Model):
         ordering = ['-fecha_creacion']
     
     def __str__(self):
-        return f"{self.marca} {self.modelo} ({self.get_tipo_display()})"
+        return f"{self.marca} {self.modelo}"
     
     def nombre_completo(self):
         """Devuelve el nombre completo del vehículo"""
