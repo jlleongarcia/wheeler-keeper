@@ -93,7 +93,7 @@
                                                 <strong>Costo Total:</strong><br>
                                                 {{ mantenimiento.costo_total|floatformat:2 }} €
                                                 {% if not mantenimiento.iva_incluido %}
-                                                    <small class="text-info"> (+ IVA)</small>
+                                                    <small class="text-info"> (IVA incluido)</small>
                                                 {% endif %}
                                                 {% if mantenimiento.costo_materiales_total or mantenimiento.costo_mano_obra_total %}
                                                     <br><small class="text-muted">

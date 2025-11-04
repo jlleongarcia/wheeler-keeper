@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
+from django.db import models
 from django.db.models import Q, Max
 from django.utils import timezone
 from datetime import timedelta
@@ -226,13 +227,56 @@ def detalle_mantenimiento(request, mantenimiento_id):
     # Obtener ítems del mantenimiento
     items = mantenimiento.items.all().select_related('tipo_mantenimiento')
     
-    # TODO: Implementar lógica de próximos mantenimientos
-    proximos_mantenimientos = []  # mantenimiento.get_proximos_mantenimientos()
+    # Calcular próximos mantenimientos para cada tipo
+    proximo_km = None
+    proxima_fecha = None
+    tipos_realizados = []
+    
+    for item in items:
+        tipo_mant = item.tipo_mantenimiento
+        tipos_realizados.append(tipo_mant)
+        
+        # Buscar intervalo personalizado del usuario para este vehículo y tipo
+        from .models import IntervaloMantenimiento
+        intervalo_personalizado = IntervaloMantenimiento.objects.filter(
+            vehiculo=mantenimiento.vehiculo,
+            tipo_mantenimiento=tipo_mant
+        ).first()
+        
+        # Usar intervalo personalizado o el por defecto del tipo
+        if intervalo_personalizado:
+            # Si hay personalización y el valor es > 0, usarlo; sino usar el por defecto
+            intervalo_km = intervalo_personalizado.intervalo_km_personalizado if intervalo_personalizado.intervalo_km_personalizado > 0 else (tipo_mant.intervalo_km or 0)
+            intervalo_meses = intervalo_personalizado.intervalo_meses_personalizado if intervalo_personalizado.intervalo_meses_personalizado > 0 else (tipo_mant.intervalo_meses or 0)
+        else:
+            intervalo_km = tipo_mant.intervalo_km or 0
+            intervalo_meses = tipo_mant.intervalo_meses or 0
+        
+        # Calcular próximo mantenimiento por kilometraje
+        if intervalo_km > 0:
+            proximo_km_tipo = mantenimiento.kilometraje_realizacion + intervalo_km
+            if proximo_km is None or proximo_km_tipo < proximo_km:
+                proximo_km = proximo_km_tipo
+        
+        # Calcular próximo mantenimiento por fecha
+        if intervalo_meses > 0:
+            from dateutil.relativedelta import relativedelta
+            proxima_fecha_tipo = mantenimiento.fecha_realizacion + relativedelta(months=intervalo_meses)
+            if proxima_fecha is None or proxima_fecha_tipo < proxima_fecha:
+                proxima_fecha = proxima_fecha_tipo
+    
+    # Calcular kilómetros restantes
+    km_restantes = None
+    if proximo_km:
+        km_restantes = proximo_km - mantenimiento.vehiculo.kilometraje_actual
     
     return render(request, 'maintenance/mantenimientos/detalle.html', {
         'mantenimiento': mantenimiento,
         'items': items,
-        'proximos_mantenimientos': proximos_mantenimientos,
+        'proximo_km': proximo_km,
+        'proxima_fecha': proxima_fecha,
+        'km_restantes': km_restantes,
+        'tipos_realizados': tipos_realizados,
     })
 
 
@@ -294,26 +338,92 @@ def eliminar_mantenimiento(request, mantenimiento_id):
 @login_required
 def proximos_mantenimientos(request):
     """Vista para mostrar mantenimientos próximos a vencer"""
-    vehiculos = Vehiculo.objects.filter(propietario=request.user)
+    from .models import IntervaloMantenimiento, TipoMantenimiento
+    from dateutil.relativedelta import relativedelta
+    from datetime import date
     
+    vehiculos = Vehiculo.objects.filter(propietario=request.user)
     mantenimientos_proximos = []
+    
     for vehiculo in vehiculos:
-        registros = RegistroMantenimiento.objects.filter(vehiculo=vehiculo)
-        for registro in registros:
-            es_proximo, mensaje = registro.es_vencimiento_proximo()
-            if es_proximo:
-                proximo_km = registro.proximo_por_km()
-                proxima_fecha = registro.proximo_por_fecha()
-                mantenimientos_proximos.append({
-                    'registro': registro,
-                    'mensaje': mensaje,
-                    'vehiculo': vehiculo,
-                    'proximo_km': proximo_km,
-                    'proxima_fecha': proxima_fecha
-                })
+        # Obtener todos los tipos de mantenimiento aplicables a este vehículo
+        tipos_aplicables = TipoMantenimiento.objects.filter(
+            models.Q(vehiculos_aplicables='todos') | models.Q(vehiculos_aplicables=vehiculo.tipo),
+            activo=True
+        ).filter(
+            models.Q(intervalo_km__gt=0) | models.Q(intervalo_meses__gt=0)
+        )
+        
+        for tipo_mant in tipos_aplicables:
+            # Buscar el último mantenimiento de este tipo
+            ultimo_registro = RegistroMantenimiento.objects.filter(
+                vehiculo=vehiculo,
+                items__tipo_mantenimiento=tipo_mant
+            ).order_by('-fecha_realizacion').first()
+            
+            if ultimo_registro:
+                # Buscar intervalo personalizado
+                intervalo_personalizado = IntervaloMantenimiento.objects.filter(
+                    vehiculo=vehiculo,
+                    tipo_mantenimiento=tipo_mant
+                ).first()
+                
+                # Determinar intervalos a usar
+                if intervalo_personalizado:
+                    intervalo_km = intervalo_personalizado.intervalo_km_personalizado if intervalo_personalizado.intervalo_km_personalizado > 0 else tipo_mant.intervalo_km
+                    intervalo_meses = intervalo_personalizado.intervalo_meses_personalizado if intervalo_personalizado.intervalo_meses_personalizado > 0 else tipo_mant.intervalo_meses
+                else:
+                    intervalo_km = tipo_mant.intervalo_km or 0
+                    intervalo_meses = tipo_mant.intervalo_meses or 0
+                
+                # Calcular próximos vencimientos
+                proximo_km = None
+                proxima_fecha = None
+                es_proximo = False
+                mensaje = ""
+                
+                if intervalo_km > 0:
+                    proximo_km = ultimo_registro.kilometraje_realizacion + intervalo_km
+                    km_restantes = proximo_km - vehiculo.kilometraje_actual
+                    
+                    if km_restantes <= 1000:  # Próximo si faltan 1000 km o menos
+                        es_proximo = True
+                        if km_restantes <= 0:
+                            mensaje = f"¡Ya es hora del mantenimiento! (Pasado por {abs(km_restantes):.0f} km)"
+                        else:
+                            mensaje = f"Próximo mantenimiento en {km_restantes:.0f} km"
+                
+                if intervalo_meses > 0:
+                    proxima_fecha = ultimo_registro.fecha_realizacion + relativedelta(months=intervalo_meses)
+                    dias_restantes = (proxima_fecha - date.today()).days
+                    
+                    if dias_restantes <= 30:  # Próximo si faltan 30 días o menos
+                        es_proximo = True
+                        if dias_restantes <= 0:
+                            mensaje += f" ¡Ya es hora del mantenimiento! (Pasado por {abs(dias_restantes)} días)"
+                        else:
+                            if mensaje:
+                                mensaje += f" o en {dias_restantes} días"
+                            else:
+                                mensaje = f"Próximo mantenimiento en {dias_restantes} días"
+                
+                if es_proximo:
+                    mantenimientos_proximos.append({
+                        'tipo_mantenimiento': tipo_mant,
+                        'ultimo_registro': ultimo_registro,
+                        'vehiculo': vehiculo,
+                        'proximo_km': proximo_km,
+                        'proxima_fecha': proxima_fecha,
+                        'mensaje': mensaje,
+                        'km_restantes': proximo_km - vehiculo.kilometraje_actual if proximo_km else None,
+                        'dias_restantes': (proxima_fecha - date.today()).days if proxima_fecha else None,
+                    })
     
     # Ordenar por prioridad (primero los más urgentes)
-    mantenimientos_proximos.sort(key=lambda x: x['registro'].fecha_realizacion, reverse=True)
+    mantenimientos_proximos.sort(key=lambda x: (
+        x['km_restantes'] if x['km_restantes'] is not None else 999999,
+        x['dias_restantes'] if x['dias_restantes'] is not None else 999999
+    ))
     
     return render(request, 'maintenance/mantenimientos/proximos.html', {
         'mantenimientos_proximos': mantenimientos_proximos
