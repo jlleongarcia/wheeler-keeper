@@ -1,10 +1,13 @@
 # Wheeler Keeper - Django Car Maintenance Logger
 
-A Django-based web application for logging and tracking car maintenance records, fully containerized with Docker.
+A **complete and production-ready** Django-based web application for comprehensive car maintenance logging and tracking, featuring automated email notifications, multi-item cost management, and user-friendly interfaces. Fully containerized with Docker for easy deployment.
 
 ## Features
 
 - **Car Maintenance Logging**: Track all maintenance activities for your vehicle
+- **Automated Email Notifications**: Smart system that automatically notifies users about upcoming or overdue maintenance (no external cron jobs required)
+- **Multi-Item Cost Tracking**: Separate labor costs from parts with taxes calculation support
+- **User-Friendly Interface**: Clean, intuitive interface without admin panel complexity
 - **PostgreSQL Database**: Reliable database backend for data persistence
 - **Docker Containerization**: Easy deployment and development environment
 - **Django Admin Interface**: Built-in admin panel for data management
@@ -212,22 +215,45 @@ The application uses PostgreSQL in production/Docker environment. The database c
 
 ### Database Schema
 
-The `maintenance` app will contain models for:
-- Vehicle information
-- Maintenance records
-- Service categories
-- Maintenance schedules
+The `maintenance` app contains complete models for:
+- **Vehiculo**: Vehicle information (make, model, year, current mileage)
+- **TipoMantenimiento**: Maintenance service categories with default intervals
+- **RegistroMantenimiento**: Main maintenance record entries
+- **ItemMantenimiento**: Individual maintenance items with cost breakdown (labor vs parts)
+- **IntervaloMantenimiento**: Custom maintenance intervals per vehicle
+- **UserRegistrationRequest**: User registration system with email approval
+- **NotificacionMantenimiento**: Automated notification tracking and anti-spam
 
-## Next Steps
+## Current Implementation Status
 
-After setting up the basic structure, you can:
+Wheeler Keeper is a **fully functional** car maintenance logging application with advanced features:
 
-1. **Define Models**: Create vehicle and maintenance record models in `maintenance/models.py`
-2. **Create Views**: Implement views for listing, adding, and editing maintenance records
-3. **Design Templates**: Create HTML templates for the user interface
-4. **Add Forms**: Create Django forms for data input
-5. **Implement Search**: Add search and filtering capabilities
-6. **Add Authentication**: Implement user authentication for multi-user support
+### ✅ **Completed Features**
+1. **Models & Database**: ✅ Complete vehicle and maintenance record models with multi-item support
+2. **User Interface**: ✅ Clean, user-friendly interface without admin complexity 
+3. **Forms & Validation**: ✅ Advanced Django forms with JavaScript-enhanced multi-item entry
+4. **Authentication**: ✅ Multi-user support with registration system and email notifications
+5. **Cost Tracking**: ✅ Separate labor costs from parts with IVA (tax) calculation
+6. **Automated Notifications**: ✅ Smart email notification system for upcoming/overdue maintenance
+7. **Admin Panel**: ✅ Complete admin interface for management and monitoring
+
+### 🚀 **Ready to Use**
+The application is production-ready with:
+- Multi-item maintenance logging
+- Cost separation (labor vs parts)
+- Tax calculation (IVA support)
+- Automated email reminders
+- User registration system
+- Complete admin oversight
+
+### 🔮 **Future Enhancements** 
+Possible future improvements:
+1. **Mobile App**: Native mobile application
+2. **Advanced Analytics**: Maintenance cost trends and analytics
+3. **Integration APIs**: Connect with third-party services
+4. **Inventory Management**: Parts inventory tracking
+5. **Service Provider Network**: Connect with local mechanics
+6. **Vehicle History Reports**: Generate comprehensive maintenance reports
 
 ## 🚀 Installation Guide - Troubleshooting
 
@@ -410,6 +436,160 @@ View emails in container logs:
 docker-compose logs -f web
 # Or: make logs
 ```
+
+## Automated Maintenance Notifications
+
+Wheeler Keeper includes a comprehensive **automated email notification system** that alerts users about upcoming or overdue maintenance **without requiring external cron job configuration**.
+
+### Key Features
+
+#### ✅ **Smart Detection**
+- Overdue maintenance by time or mileage
+- Upcoming maintenance (≤30 days or ≤1000 km)
+- Automatic calculation based on custom or default intervals
+
+#### ✅ **Anti-Spam System**
+- Only one notification per maintenance type every 24 hours
+- Complete tracking of sent notifications in database
+- Automatic prevention of duplicate notifications
+
+#### ✅ **Transparent Integration**
+- **No external configuration required** (no cron jobs)
+- Executes automatically during normal navigation
+- Users don't need to log in daily
+
+#### ✅ **Professional Emails**
+- Responsive HTML templates with professional design
+- Urgency classification (🚨 overdue vs 🔧 upcoming)
+- Vehicle grouping for clarity
+- Detailed information for each maintenance item
+
+### How It Works
+
+#### 1. **Smart Middleware**
+The system uses Django middleware (`NotificacionesProgramadasMiddleware`) that:
+- Activates when users navigate through the application
+- Checks once per day per user for pending maintenance
+- Uses internal cache to avoid excessive checks
+- Runs silently without affecting user experience
+
+#### 2. **Management Command**
+```bash
+# Manual verification (test mode)
+docker-compose exec web python manage.py enviar_notificaciones_mantenimiento --test-mode
+
+# Specific user verification
+docker-compose exec web python manage.py enviar_notificaciones_mantenimiento --user-email user@example.com
+
+# Silent mode (used by middleware)
+docker-compose exec web python manage.py enviar_notificaciones_mantenimiento --silencioso --usuario-id 123
+```
+
+#### 3. **Tracking Model**
+- `NotificacionMantenimiento`: Records each sent notification
+- Prevents spam with 24-hour checks
+- Stores metadata: alert type, mileage, sending success
+
+### Configuration
+
+#### 1. **Middleware (Already Active)**
+In `settings.py`:
+```python
+MIDDLEWARE = [
+    # ... other middlewares
+    'maintenance.middleware.NotificacionesProgramadasMiddleware',
+]
+```
+
+#### 2. **Email Configuration**
+Make sure your `settings.py` or `.env` includes:
+```python
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'your-smtp-server.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your-user@example.com'
+EMAIL_HOST_PASSWORD = 'your-password'
+DEFAULT_FROM_EMAIL = 'Wheeler Keeper <no-reply@your-domain.com>'
+```
+
+### Notification Types
+
+#### 🚨 **Overdue**
+- **By time**: Maintenance that should have been done X days ago
+- **By mileage**: Vehicle exceeded recommended mileage
+
+#### 🔧 **Upcoming**
+- **By time**: Maintenance due in ≤30 days
+- **By mileage**: Maintenance due in ≤1000 km
+
+### Integrated System Advantages
+
+#### ✅ **No External Dependencies**
+- No need to configure cron jobs
+- No root server access required
+- Works on any Django-supporting hosting
+
+#### ✅ **Delivery Guarantee**
+- Executes automatically with normal user activity
+- If one user doesn't log in, it runs when another user navigates
+- Periodic verification ensured while application is active
+
+#### ✅ **Simplified Maintenance**
+- All code integrated into Django application
+- Logs accessible from the application
+- Complete administration from Django panel
+
+### Admin Panel
+
+You can view complete notification history at:
+**Django Admin > MAINTENANCE > Notificaciones de Mantenimiento**
+
+#### Available Information:
+- Notified user
+- Vehicle and maintenance type
+- Alert type (overdue/upcoming, time/mileage)
+- Send date and time
+- Email status (sent/failed)
+- Vehicle mileage at notification time
+
+### Manual Command
+
+For administrators who want to force checks:
+
+```bash
+# Check all users (test mode)
+docker-compose exec web python manage.py enviar_notificaciones_mantenimiento --test-mode
+
+# Send real notifications
+docker-compose exec web python manage.py enviar_notificaciones_mantenimiento
+
+# Specific user
+docker-compose exec web python manage.py enviar_notificaciones_mantenimiento --user-email john@example.com
+```
+
+### Logs and Debugging
+
+System logs are stored in Django logger:
+```python
+import logging
+logger = logging.getLogger(__name__)
+```
+
+For debugging, run in test mode:
+```bash
+docker-compose exec web python manage.py enviar_notificaciones_mantenimiento --test-mode
+```
+
+### Important Notes
+
+1. **First Execution**: System starts working immediately after deployment
+2. **Frequency**: Maximum one check per user per day
+3. **Anti-Spam**: One notification per maintenance type every 24 hours
+4. **Performance**: Minimal navigation impact (asynchronous execution)
+5. **Scalability**: Works efficiently with multiple users
+
+The system is designed to be **completely automatic and transparent**, providing an excellent user experience without additional configuration.
 
 ## Contributing
 

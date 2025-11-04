@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import Vehiculo, TipoMantenimiento, IntervaloMantenimiento, RegistroMantenimiento, ItemMantenimiento, UserRegistrationRequest
+from .models import (
+    Vehiculo, TipoMantenimiento, IntervaloMantenimiento, 
+    RegistroMantenimiento, ItemMantenimiento, UserRegistrationRequest,
+    NotificacionMantenimiento
+)
 
 
 @admin.register(Vehiculo)
@@ -365,4 +369,53 @@ class UserRegistrationRequestAdmin(admin.ModelAdmin):
     
     def has_add_permission(self, request):
         """No permitir agregar solicitudes desde el admin (solo desde formulario)"""
+        return False
+
+
+@admin.register(NotificacionMantenimiento)
+class NotificacionMantenimientoAdmin(admin.ModelAdmin):
+    """Administración de notificaciones de mantenimiento"""
+    
+    list_display = [
+        'usuario', 
+        'vehiculo', 
+        'tipo_mantenimiento', 
+        'tipo_alerta',
+        'fecha_envio',
+        'email_enviado',
+        'kilometraje_notificado'
+    ]
+    
+    list_filter = [
+        'tipo_alerta', 
+        'email_enviado',
+        'fecha_envio',
+        'tipo_mantenimiento'
+    ]
+    
+    search_fields = [
+        'usuario__username',
+        'usuario__email', 
+        'vehiculo__marca',
+        'vehiculo__modelo',
+        'tipo_mantenimiento__nombre'
+    ]
+    
+    readonly_fields = [
+        'fecha_envio', 
+        'kilometraje_notificado'
+    ]
+    
+    date_hierarchy = 'fecha_envio'
+    
+    ordering = ['-fecha_envio']
+    
+    def get_queryset(self, request):
+        """Optimizar consultas con select_related"""
+        return super().get_queryset(request).select_related(
+            'usuario', 'vehiculo', 'tipo_mantenimiento'
+        )
+    
+    def has_add_permission(self, request):
+        """No permitir agregar notificaciones manualmente"""
         return False

@@ -661,3 +661,91 @@ El equipo de Wheeler Keeper
         except Exception as e:
             # Log del error pero no fallar el rechazo
             print(f"Error enviando email de rechazo a {self.email}: {str(e)}")
+
+
+class NotificacionMantenimiento(models.Model):
+    """Modelo para trackear notificaciones de mantenimiento enviadas"""
+    
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Usuario",
+        related_name="notificaciones_mantenimiento"
+    )
+    
+    vehiculo = models.ForeignKey(
+        Vehiculo,
+        on_delete=models.CASCADE,
+        verbose_name="Vehículo"
+    )
+    
+    tipo_mantenimiento = models.ForeignKey(
+        TipoMantenimiento,
+        on_delete=models.CASCADE,
+        verbose_name="Tipo de mantenimiento"
+    )
+    
+    fecha_envio = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de envío"
+    )
+    
+    tipo_alerta = models.CharField(
+        max_length=20,
+        choices=[
+            ('proximo_km', 'Próximo por kilometraje'),
+            ('proximo_tiempo', 'Próximo por tiempo'),
+            ('vencido_km', 'Vencido por kilometraje'),
+            ('vencido_tiempo', 'Vencido por tiempo'),
+        ],
+        verbose_name="Tipo de alerta"
+    )
+    
+    kilometraje_notificado = models.PositiveIntegerField(
+        verbose_name="Kilometraje cuando se notificó",
+        help_text="Kilometraje del vehículo al momento de la notificación"
+    )
+    
+    email_enviado = models.BooleanField(
+        default=False,
+        verbose_name="Email enviado"
+    )
+    
+    class Meta:
+        verbose_name = "Notificación de Mantenimiento"
+        verbose_name_plural = "Notificaciones de Mantenimiento"
+        ordering = ['-fecha_envio']
+    
+    def __str__(self):
+        return f"{self.usuario.username} - {self.vehiculo} - {self.tipo_mantenimiento.nombre} ({self.get_tipo_alerta_display()})"
+    
+    @classmethod
+    def debe_notificar(cls, usuario, vehiculo, tipo_mantenimiento, tipo_alerta):
+        """Verifica si se debe enviar una notificación (evita spam)"""
+        from datetime import timedelta
+        from django.utils import timezone
+        
+        # Verificar si ya se envió una notificación en las últimas 24 horas
+        hace_24_horas = timezone.now() - timedelta(hours=24)
+        
+        existe_reciente = cls.objects.filter(
+            usuario=usuario,
+            vehiculo=vehiculo,
+            tipo_mantenimiento=tipo_mantenimiento,
+            tipo_alerta=tipo_alerta,
+            fecha_envio__gte=hace_24_horas
+        ).exists()
+        
+        return not existe_reciente
+    
+    @classmethod
+    def registrar_notificacion(cls, usuario, vehiculo, tipo_mantenimiento, tipo_alerta, email_enviado=True):
+        """Registra una notificación enviada"""
+        return cls.objects.create(
+            usuario=usuario,
+            vehiculo=vehiculo,
+            tipo_mantenimiento=tipo_mantenimiento,
+            tipo_alerta=tipo_alerta,
+            kilometraje_notificado=vehiculo.kilometraje_actual,
+            email_enviado=email_enviado
+        )

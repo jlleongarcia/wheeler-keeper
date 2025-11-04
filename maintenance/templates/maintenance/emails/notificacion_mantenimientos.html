@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificación de Mantenimientos - Wheeler Keeper</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .header h1 {
+            color: #0056b3;
+            margin: 0;
+            font-size: 24px;
+        }
+        .header .subtitle {
+            color: #6c757d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .alert {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .vehiculo-section {
+            margin: 25px 0;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .vehiculo-header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            font-weight: bold;
+            color: #495057;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .mantenimiento-item {
+            padding: 15px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        .mantenimiento-item:last-child {
+            border-bottom: none;
+        }
+        .mantenimiento-tipo {
+            font-weight: bold;
+            color: #0056b3;
+            margin-bottom: 5px;
+        }
+        .mantenimiento-categoria {
+            display: inline-block;
+            background-color: #6c757d;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-right: 10px;
+        }
+        .mantenimiento-mensaje {
+            color: #495057;
+            font-size: 14px;
+        }
+        .urgente {
+            background-color: #fff5f5 !important;
+            border-left: 4px solid #dc3545;
+        }
+        .proximo {
+            background-color: #fffbf0 !important;
+            border-left: 4px solid #ffc107;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            color: #6c757d;
+            font-size: 12px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #0056b3;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 5px;
+        }
+        .summary {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Wheeler Keeper</h1>
+            <div class="subtitle">Notificación de Mantenimientos</div>
+        </div>
+
+        <p>Hola <strong>{{ usuario.first_name|default:usuario.username }}</strong>,</p>
+
+        {% if total_vencidos > 0 %}
+            <div class="alert alert-danger">
+                🚨 <strong>¡ATENCIÓN!</strong> Tienes {{ total_vencidos }} mantenimiento{{ total_vencidos|pluralize:"s" }} vencido{{ total_vencidos|pluralize:"s" }}.
+            </div>
+        {% else %}
+            <div class="alert alert-warning">
+                🔧 Tienes {{ total_mantenimientos }} mantenimiento{{ total_mantenimientos|pluralize:"s" }} próximo{{ total_mantenimientos|pluralize:"s" }} a vencer.
+            </div>
+        {% endif %}
+
+        <div class="summary">
+            <strong>Resumen:</strong>
+            <ul>
+                <li>{{ mantenimientos_por_vehiculo|length }} vehículo{{ mantenimientos_por_vehiculo|length|pluralize:"s" }} con mantenimientos pendientes</li>
+                <li>{{ total_mantenimientos }} mantenimiento{{ total_mantenimientos|pluralize:"s" }} en total</li>
+                {% if total_vencidos > 0 %}
+                    <li style="color: #dc3545;">{{ total_vencidos }} ya vencido{{ total_vencidos|pluralize:"s" }}</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        {% for vehiculo, mantenimientos in mantenimientos_por_vehiculo.items %}
+            <div class="vehiculo-section">
+                <div class="vehiculo-header">
+                    🚙 {{ vehiculo.nombre_completo }}
+                    <small>({{ vehiculo.kilometraje_actual|floatformat:0 }} km)</small>
+                </div>
+                
+                {% for mantenimiento in mantenimientos %}
+                    <div class="mantenimiento-item {% if mantenimiento.urgencia == 2 %}urgente{% elif mantenimiento.urgencia == 1 %}proximo{% endif %}">
+                        <div class="mantenimiento-tipo">
+                            <span class="mantenimiento-categoria">{{ mantenimiento.tipo_mantenimiento.get_categoria_display }}</span>
+                            {{ mantenimiento.tipo_mantenimiento.nombre }}
+                        </div>
+                        <div class="mantenimiento-mensaje">
+                            {% if mantenimiento.urgencia == 2 %}
+                                🚨 {{ mantenimiento.mensaje }}
+                            {% else %}
+                                ⏰ {{ mantenimiento.mensaje }}
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">
+                            Último realizado: {{ mantenimiento.ultimo_registro.fecha_realizacion|date:"d/m/Y" }} 
+                            ({{ mantenimiento.ultimo_registro.kilometraje_realizacion|floatformat:0 }} km)
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="http://{{ request.get_host }}{% url 'maintenance:proximos_mantenimientos' %}" class="btn">
+                Ver Todos los Próximos Mantenimientos
+            </a>
+            <a href="http://{{ request.get_host }}{% url 'maintenance:lista_mantenimientos' %}" class="btn">
+                Ver Historial de Mantenimientos
+            </a>
+        </div>
+
+        <div class="footer">
+            <p>
+                <strong>Wheeler Keeper</strong> - Sistema de Gestión de Mantenimiento Vehicular<br>
+                Fecha de envío: {{ fecha_hoy|date:"d/m/Y" }}<br>
+                <em>Este es un mensaje automático. Por favor, no respondas a este correo.</em>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
