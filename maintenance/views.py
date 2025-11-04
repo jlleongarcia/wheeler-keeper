@@ -414,3 +414,92 @@ Wheeler Keeper
 def registro_exitoso(request):
     """Vista para mostrar mensaje de éxito tras el registro"""
     return render(request, 'registration/registro_exitoso.html')
+
+
+@login_required
+def panel_usuario(request):
+    """Panel principal del usuario para gestionar su cuenta e intervalos"""
+    vehiculos = Vehiculo.objects.filter(propietario=request.user)
+    
+    # Añadir el contador de intervalos directamente a cada vehículo
+    for vehiculo in vehiculos:
+        vehiculo.intervalos_count = vehiculo.intervalos_personalizados.count()
+    
+    return render(request, 'maintenance/usuario/panel.html', {
+        'vehiculos': vehiculos
+    })
+
+
+@login_required
+def gestionar_intervalos(request, vehiculo_id):
+    """Vista para gestionar intervalos personalizados de un vehículo específico"""
+    vehiculo = get_object_or_404(Vehiculo, id=vehiculo_id, propietario=request.user)
+    
+    # Obtener todos los tipos de mantenimiento
+    tipos_mantenimiento = TipoMantenimiento.objects.all().order_by('categoria', 'nombre')
+    
+    # Obtener intervalos personalizados existentes
+    intervalos_existentes = IntervaloMantenimiento.objects.filter(vehiculo=vehiculo)
+    intervalos_dict = {intervalo.tipo_mantenimiento_id: intervalo for intervalo in intervalos_existentes}
+    
+    # Si es POST, procesar el formulario
+    if request.method == 'POST':
+        tipos_a_procesar = request.POST.getlist('tipo_mantenimiento')
+        
+        for tipo_id in tipos_a_procesar:
+            tipo_id = int(tipo_id)
+            km_key = f'intervalo_km_{tipo_id}'
+            meses_key = f'intervalo_meses_{tipo_id}'
+            notas_key = f'notas_{tipo_id}'
+            
+            km_value = request.POST.get(km_key, '0')
+            meses_value = request.POST.get(meses_key, '0')
+            notas_value = request.POST.get(notas_key, '')
+            
+            # Convertir a enteros, usar 0 si no es válido
+            try:
+                km_value = int(km_value) if km_value else 0
+            except ValueError:
+                km_value = 0
+                
+            try:
+                meses_value = int(meses_value) if meses_value else 0
+            except ValueError:
+                meses_value = 0
+            
+            # Si ambos valores son 0, eliminar el intervalo personalizado si existe
+            if km_value == 0 and meses_value == 0:
+                if tipo_id in intervalos_dict:
+                    intervalos_dict[tipo_id].delete()
+            else:
+                # Crear o actualizar el intervalo personalizado
+                tipo_mantenimiento = get_object_or_404(TipoMantenimiento, id=tipo_id)
+                intervalo, created = IntervaloMantenimiento.objects.update_or_create(
+                    vehiculo=vehiculo,
+                    tipo_mantenimiento=tipo_mantenimiento,
+                    defaults={
+                        'intervalo_km_personalizado': km_value,
+                        'intervalo_meses_personalizado': meses_value,
+                        'notas': notas_value
+                    }
+                )
+        
+        messages.success(request, 'Intervalos de mantenimiento actualizados correctamente.')
+        return redirect('maintenance:gestionar_intervalos', vehiculo_id=vehiculo.id)
+    
+    # Preparar datos para el template
+    tipos_con_intervalos = []
+    for tipo in tipos_mantenimiento:
+        intervalo_personalizado = intervalos_dict.get(tipo.id)
+        tipos_con_intervalos.append({
+            'tipo': tipo,
+            'intervalo_personalizado': intervalo_personalizado,
+            'km_personalizado': intervalo_personalizado.intervalo_km_personalizado if intervalo_personalizado else 0,
+            'meses_personalizado': intervalo_personalizado.intervalo_meses_personalizado if intervalo_personalizado else 0,
+            'notas': intervalo_personalizado.notas if intervalo_personalizado else ''
+        })
+    
+    return render(request, 'maintenance/usuario/gestionar_intervalos.html', {
+        'vehiculo': vehiculo,
+        'tipos_con_intervalos': tipos_con_intervalos
+    })

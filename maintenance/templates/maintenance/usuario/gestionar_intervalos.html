@@ -1,0 +1,171 @@
+{% extends 'maintenance/base.html' %}
+
+{% block title %}Gestionar Intervalos - {{ vehiculo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-clock-history"></i> Intervalos de Mantenimiento - {{ vehiculo }}</h2>
+                <div>
+                    <a href="{% url 'maintenance:panel_usuario' %}" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left"></i> Volver al Panel
+                    </a>
+                    <a href="{% url 'maintenance:detalle_vehiculo' vehiculo.id %}" class="btn btn-outline-primary">
+                        <i class="bi bi-eye"></i> Ver Vehículo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-info-circle"></i> Información</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong><i class="bi bi-lightbulb"></i> ¿Cómo funciona?</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Los intervalos personalizados son específicos para <strong>este vehículo únicamente</strong></li>
+                            <li>Si no personalizas un intervalo, se usarán los valores por defecto del tipo de mantenimiento</li>
+                            <li>Puedes especificar intervalos en kilómetros, meses, o ambos</li>
+                            <li>Si especificas ambos, el sistema te alertará cuando se cumpla cualquiera de los dos</li>
+                            <li>Para quitar un intervalo personalizado, deja ambos campos en 0</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="bi bi-gear"></i> Configurar Intervalos</h5>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Guardar Cambios
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Agrupar por categoría -->
+                        {% regroup tipos_con_intervalos by tipo.categoria as categoria_grupos %}
+                        
+                        {% for categoria in categoria_grupos %}
+                            <div class="mb-4">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-tag"></i> {{ categoria.grouper }}
+                                </h6>
+                                
+                                <div class="row">
+                                    {% for item in categoria.list %}
+                                        <div class="col-lg-6 mb-3">
+                                            <div class="card border-light">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">{{ item.tipo.nombre }}</h6>
+                                                    <p class="card-text text-muted small">{{ item.tipo.descripcion }}</p>
+                                                    
+                                                    <!-- Valores por defecto -->
+                                                    <div class="mb-3">
+                                                        <small class="text-muted">
+                                                            <strong>Valores por defecto:</strong>
+                                                            {% if item.tipo.intervalo_km > 0 %}
+                                                                {{ item.tipo.intervalo_km|floatformat:0 }} km
+                                                            {% endif %}
+                                                            {% if item.tipo.intervalo_km > 0 and item.tipo.intervalo_meses > 0 %} / {% endif %}
+                                                            {% if item.tipo.intervalo_meses > 0 %}
+                                                                {{ item.tipo.intervalo_meses }} meses
+                                                            {% endif %}
+                                                            {% if item.tipo.intervalo_km == 0 and item.tipo.intervalo_meses == 0 %}
+                                                                Sin intervalo definido
+                                                            {% endif %}
+                                                        </small>
+                                                    </div>
+                                                    
+                                                    <!-- Inputs para personalizar -->
+                                                    <input type="hidden" name="tipo_mantenimiento" value="{{ item.tipo.id }}">
+                                                    
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <label class="form-label small">Kilómetros</label>
+                                                            <input type="number" 
+                                                                   class="form-control form-control-sm" 
+                                                                   name="intervalo_km_{{ item.tipo.id }}"
+                                                                   value="{{ item.km_personalizado }}"
+                                                                   min="0" 
+                                                                   placeholder="0 = usar defecto">
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <label class="form-label small">Meses</label>
+                                                            <input type="number" 
+                                                                   class="form-control form-control-sm" 
+                                                                   name="intervalo_meses_{{ item.tipo.id }}"
+                                                                   value="{{ item.meses_personalizado }}"
+                                                                   min="0" 
+                                                                   placeholder="0 = usar defecto">
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="mt-2">
+                                                        <label class="form-label small">Notas (opcional)</label>
+                                                        <textarea class="form-control form-control-sm" 
+                                                                  name="notas_{{ item.tipo.id }}"
+                                                                  rows="2" 
+                                                                  placeholder="Ej: Motor turbo requiere cambios más frecuentes">{{ item.notas }}</textarea>
+                                                    </div>
+                                                    
+                                                    <!-- Indicador de personalización -->
+                                                    {% if item.intervalo_personalizado %}
+                                                        <div class="mt-2">
+                                                            <span class="badge bg-success">
+                                                                <i class="bi bi-check-circle"></i> Personalizado
+                                                            </span>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                        
+                        <!-- Botones de acción -->
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle"></i> Guardar Todos los Cambios
+                            </button>
+                            <a href="{% url 'maintenance:panel_usuario' %}" class="btn btn-secondary btn-lg ms-2">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+/* Estilos adicionales para mejor visualización */
+.card-body h6.card-title {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.form-control-sm {
+    font-size: 0.875rem;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+</style>
+{% endblock %}
