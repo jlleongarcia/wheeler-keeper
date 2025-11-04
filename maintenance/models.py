@@ -274,6 +274,12 @@ class RegistroMantenimiento(models.Model):
         blank=True
     )
     
+    iva_incluido = models.BooleanField(
+        default=True,
+        verbose_name="IVA incluido (21%)",
+        help_text="Marcar si los precios ya incluyen IVA. Si no está marcado, se añadirá 21% al total"
+    )
+    
     fecha_creacion = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Fecha de registro"
@@ -299,17 +305,34 @@ class RegistroMantenimiento(models.Model):
         return sum(item.costo_total for item in self.items.all())
     
     @property
-    def costo_total(self):
-        """Calcula el costo total (materiales + mano de obra)"""
+    def costo_subtotal(self):
+        """Calcula el subtotal (materiales + mano de obra) sin IVA"""
         materiales = self.costo_materiales_total
         mano_obra = self.costo_mano_obra_total or 0
         return materiales + mano_obra
+    
+    @property
+    def costo_iva(self):
+        """Calcula el importe del IVA (21%)"""
+        if self.iva_incluido:
+            return 0
+        return self.costo_subtotal * 0.21
+    
+    @property
+    def costo_total(self):
+        """Calcula el costo total final (con o sin IVA según corresponda)"""
+        if self.iva_incluido:
+            return self.costo_subtotal
+        return self.costo_subtotal + self.costo_iva
     
     def get_desglose_costos(self):
         """Retorna un diccionario con el desglose detallado de costos"""
         return {
             'materiales': self.costo_materiales_total,
             'mano_obra': self.costo_mano_obra_total or 0,
+            'subtotal': self.costo_subtotal,
+            'iva_incluido': self.iva_incluido,
+            'iva_importe': self.costo_iva,
             'total': self.costo_total,
             'items': [
                 {

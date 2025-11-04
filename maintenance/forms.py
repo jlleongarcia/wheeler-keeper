@@ -175,7 +175,7 @@ class RegistroMantenimientoForm(forms.ModelForm):
         model = RegistroMantenimiento
         fields = [
             'vehiculo', 'fecha_realizacion', 'kilometraje_realizacion', 
-            'costo_mano_obra_total', 'taller', 'notas_generales'
+            'costo_mano_obra_total', 'taller', 'iva_incluido', 'notas_generales'
         ]
         widgets = {
             'vehiculo': forms.Select(
@@ -211,6 +211,12 @@ class RegistroMantenimientoForm(forms.ModelForm):
                 attrs={
                     'class': 'form-control',
                     'placeholder': 'Nombre del taller o lugar'
+                }
+            ),
+            'iva_incluido': forms.CheckboxInput(
+                attrs={
+                    'class': 'form-check-input',
+                    'id': 'id_iva_incluido'
                 }
             ),
             'notas_generales': forms.Textarea(
@@ -510,5 +516,5 @@ ItemMantenimientoFormSet = inlineformset_factory(
     max_num=20,  # Máximo número de formularios permitidos
     min_num=1,  # Mínimo número de formularios
     validate_min=True,
-    can_delete=True
+    can_delete=False  # Deshabilitamos el DELETE automático ya que tenemos botones personalizados
 )

@@ -92,11 +92,19 @@
                                             {% if mantenimiento.costo_total %}
                                                 <strong>Costo Total:</strong><br>
                                                 {{ mantenimiento.costo_total|floatformat:2 }} €
+                                                {% if not mantenimiento.iva_incluido %}
+                                                    <small class="text-info"> (+ IVA)</small>
+                                                {% endif %}
                                                 {% if mantenimiento.costo_materiales_total or mantenimiento.costo_mano_obra_total %}
                                                     <br><small class="text-muted">
                                                         {% if mantenimiento.costo_materiales_total %}Mat: {{ mantenimiento.costo_materiales_total|floatformat:2 }}€{% endif %}
                                                         {% if mantenimiento.costo_materiales_total and mantenimiento.costo_mano_obra_total %} | {% endif %}
                                                         {% if mantenimiento.costo_mano_obra_total %}MO: {{ mantenimiento.costo_mano_obra_total|floatformat:2 }}€{% endif %}
+                                                        {% if not mantenimiento.iva_incluido %}
+                                                            <br>IVA: {{ mantenimiento.costo_iva|floatformat:2 }}€
+                                                        {% else %}
+                                                            <br>IVA incluido
+                                                        {% endif %}
                                                     </small>
                                                 {% endif %}
                                             {% else %}
