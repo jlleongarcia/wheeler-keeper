@@ -245,6 +245,16 @@ class Command(BaseCommand):
                 'intervalo_km': 0,
                 'intervalo_meses': 12,
                 'vehiculos_aplicables': 'todos'
+            },
+
+            # Otros
+            {
+                'nombre': 'Copia de llaves',
+                'descripcion': 'Copia de llaves del vehículo',
+                'categoria': 'Otros',
+                'intervalo_km': 0,
+                'intervalo_meses': 0,
+                'vehiculos_aplicables': 'todos'
             }
         ]
         
