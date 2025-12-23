@@ -1,4 +1,5 @@
 services:
+  restart: unless-stopped
   web:
     build: .
     command: >
