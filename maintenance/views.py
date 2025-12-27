@@ -628,3 +628,8 @@ def gestionar_intervalos(request, vehiculo_id):
         'vehiculo': vehiculo,
         'tipos_con_intervalos': tipos_con_intervalos
     })
+
+
+def google_oauth_error(request):
+    """Vista para mostrar página de error de configuración de Google OAuth"""
+    return render(request, 'socialaccount/authentication_error.html')

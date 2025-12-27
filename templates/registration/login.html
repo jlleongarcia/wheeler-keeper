@@ -90,6 +90,16 @@
                             </div>
                         {% endif %}
                         
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
                         <form method="post">
                             {% csrf_token %}
                             
@@ -143,6 +153,13 @@
                             <small class="text-muted">
                                 <i class="bi bi-shield-check me-1"></i>
                                 Acceso seguro a tu cuenta
+                            </small>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                ¿No tienes cuenta? 
+                                <a href="/mantenimiento/registro/" class="text-primary">Regístrate aquí</a>
                             </small>
                         </div>
                     </div>

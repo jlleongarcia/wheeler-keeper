@@ -441,6 +441,11 @@ class UserRegistrationRequest(models.Model):
         ('rechazado', 'Rechazado'),
     ]
     
+    REGISTRATION_TYPE_CHOICES = [
+        ('manual', 'Registro Manual'),
+        ('google', 'Registro con Google'),
+    ]
+    
     username = models.CharField(
         max_length=150,
         verbose_name="Nombre de usuario",
@@ -463,7 +468,31 @@ class UserRegistrationRequest(models.Model):
     password_hash = models.CharField(
         max_length=128,
         verbose_name="Hash de contraseña",
-        help_text="Hash de la contraseña del usuario"
+        help_text="Hash de la contraseña del usuario",
+        null=True,
+        blank=True  # Para cuentas de Google no necesitamos password
+    )
+    
+    # Nuevos campos para manejar cuentas sociales
+    registration_type = models.CharField(
+        max_length=20,
+        choices=REGISTRATION_TYPE_CHOICES,
+        default='manual',
+        verbose_name="Tipo de registro",
+        help_text="Método usado para el registro"
+    )
+    google_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="Google ID",
+        help_text="ID único de Google del usuario"
+    )
+    google_picture = models.URLField(
+        null=True,
+        blank=True,
+        verbose_name="Foto de Google",
+        help_text="URL de la foto de perfil de Google"
     )
     
     status = models.CharField(
@@ -520,15 +549,32 @@ class UserRegistrationRequest(models.Model):
         if User.objects.filter(username=self.username).exists():
             raise ValueError("El nombre de usuario ya existe")
         
-        # Crear el usuario
-        user = User.objects.create(
-            username=self.username,
-            email=self.email,
-            first_name=self.first_name,
-            last_name=self.last_name,
-            password=self.password_hash,  # Ya viene hasheada
-            is_active=True
-        )
+        # Crear el usuario con configuración según el tipo de registro
+        if self.registration_type == 'google':
+            # Para cuentas de Google, generar password aleatoria (no se usará)
+            import secrets
+            random_password = secrets.token_urlsafe(32)
+            user = User.objects.create(
+                username=self.username,
+                email=self.email,
+                first_name=self.first_name,
+                last_name=self.last_name,
+                password=make_password(random_password),
+                is_active=True
+            )
+            
+            # Crear la cuenta social vinculada
+            self._crear_cuenta_social(user)
+        else:
+            # Para cuentas manuales, usar la password proporcionada
+            user = User.objects.create(
+                username=self.username,
+                email=self.email,
+                first_name=self.first_name,
+                last_name=self.last_name,
+                password=self.password_hash,  # Ya viene hasheada
+                is_active=True
+            )
         
         # Actualizar la solicitud
         self.status = 'aprobado'
@@ -541,6 +587,32 @@ class UserRegistrationRequest(models.Model):
         self._enviar_email_aprobacion()
         
         return user
+    
+    def _crear_cuenta_social(self, user):
+        """Crear la cuenta social vinculada para usuarios de Google"""
+        if self.registration_type == 'google' and self.google_id:
+            from allauth.socialaccount.models import SocialAccount, SocialApp
+            
+            try:
+                # Buscar la aplicación social de Google
+                google_app = SocialApp.objects.get(provider='google')
+                
+                # Crear la cuenta social
+                social_account = SocialAccount.objects.create(
+                    user=user,
+                    provider='google',
+                    uid=self.google_id,
+                    extra_data={
+                        'picture': self.google_picture,
+                        'name': f"{self.first_name} {self.last_name}",
+                        'email': self.email,
+                    }
+                )
+                social_account.save()
+                
+            except SocialApp.DoesNotExist:
+                # Si no existe la app de Google configurada, continuar sin crear la cuenta social
+                pass
     
     def rechazar(self, admin_user, notas=""):
         """Rechazar la solicitud"""

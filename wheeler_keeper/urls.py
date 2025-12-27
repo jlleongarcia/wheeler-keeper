@@ -41,7 +41,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('mantenimiento/', include('maintenance.urls')),
     
-    # URLs de autenticación
+    # URLs de OAuth con Google (en ruta separada para evitar conflictos)
+    path('oauth/', include('allauth.urls')),
+    
+    # URLs de autenticación tradicional
     path('accounts/login/', auth_views.LoginView.as_view(
         template_name='registration/login.html',
         redirect_authenticated_user=True

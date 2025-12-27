@@ -29,6 +29,9 @@ urlpatterns = [
     path('registro/', views.registro_usuario, name='registro_usuario'),
     path('registro/exitoso/', views.registro_exitoso, name='registro_exitoso'),
     
+    # Google OAuth
+    path('google/error/', views.google_oauth_error, name='google_oauth_error'),
+    
     # Panel de usuario
     path('usuario/panel/', views.panel_usuario, name='panel_usuario'),
     path('usuario/vehiculos/<int:vehiculo_id>/intervalos/', views.gestionar_intervalos, name='gestionar_intervalos'),

@@ -271,6 +271,7 @@ class UserRegistrationRequestAdmin(admin.ModelAdmin):
         'first_name', 
         'last_name', 
         'email', 
+        'registration_type',
         'status', 
         'fecha_solicitud',
         'procesado_por'
@@ -278,6 +279,7 @@ class UserRegistrationRequestAdmin(admin.ModelAdmin):
     
     list_filter = [
         'status', 
+        'registration_type',
         'fecha_solicitud',
         'fecha_procesado'
     ]
@@ -291,16 +293,23 @@ class UserRegistrationRequestAdmin(admin.ModelAdmin):
     
     readonly_fields = [
         'password_hash', 
+        'registration_type',
+        'google_id',
+        'google_picture',
         'fecha_solicitud', 
         'fecha_procesado'
     ]
     
     fieldsets = (
         ('Información del Usuario', {
-            'fields': ('username', 'email', 'first_name', 'last_name')
+            'fields': ('username', 'email', 'first_name', 'last_name', 'registration_type')
         }),
         ('Estado', {
             'fields': ('status', 'notas')
+        }),
+        ('Información de Google', {
+            'fields': ('google_id', 'google_picture'),
+            'classes': ('collapse',)
         }),
         ('Información Técnica', {
             'fields': ('password_hash',),
