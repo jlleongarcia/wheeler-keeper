@@ -24,6 +24,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . /app/
 
+# Copy settings.example.py to settings.py for build
+RUN cp wheeler_keeper/settings.example.py wheeler_keeper/settings.py
+
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
