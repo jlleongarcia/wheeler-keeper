@@ -262,6 +262,10 @@ class ItemMantenimientoAdmin(admin.ModelAdmin):
     readonly_fields = ['costo_total']
 
 
+# Registrar UserRegistrationRequest bajo Autenticación y Autorización
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import Group
+
 @admin.register(UserRegistrationRequest)
 class UserRegistrationRequestAdmin(admin.ModelAdmin):
     """Administración de solicitudes de registro de usuarios"""
