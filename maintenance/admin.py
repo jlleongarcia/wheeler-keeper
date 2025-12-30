@@ -389,7 +389,3 @@ class NotificacionMantenimientoAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         """No permitir agregar notificaciones manualmente"""
         return False
-
-
-# Registrar el modelo UserRegistrationRequest con su admin personalizado
-admin.site.register(UserRegistrationRequest, UserRegistrationRequestAdmin)
