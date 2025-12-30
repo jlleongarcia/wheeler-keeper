@@ -1,25 +1,23 @@
 services:
   wheeler-keeper:
-    image: ghrc.io/jlleongarcia/wheeler-keeper:latest
+    image: ghcr.io/jlleongarcia/wheeler-keeper:latest
     command: >
-      sh -c "python manage.py makemigrations &&
-             python manage.py migrate &&
+      sh -c "python manage.py migrate &&
              python manage.py create_default_superuser &&
-             python manage.py runserver 0.0.0.0:8000"
+             python manage.py collectstatic --noinput &&
+             gunicorn wheeler_keeper.wsgi:application --bind 0.0.0.0:8000"
     volumes:
-      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
     restart: unless-stopped
     ports:
       - "8200:8000"
     depends_on:
       - db
+    env_file:
+      - .env
     environment:
-      - DEBUG=1
       - DB_HOST=db
-      - DB_NAME=wheeler_keeper_db
-      - DB_USER=wheeler_keeper_user
-      - DB_PASSWORD=wheeler_keeper_password
-      - DB_PORT=5432
 
   db:
     image: postgres:16
@@ -34,3 +32,5 @@ services:
 
 volumes:
   postgres_data:
+  static_volume:
+  media_volume:
