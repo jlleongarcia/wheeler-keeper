@@ -147,6 +147,9 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
             from django.core.mail import send_mail
             from django.conf import settings
             from django.contrib.auth.models import User
+            import logging
+            
+            logger = logging.getLogger(__name__)
             
             # Obtener email del administrador
             try:
@@ -181,9 +184,13 @@ Wheeler Keeper
                 message=message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[admin_email],
-                fail_silently=True,  # No fallar si no se puede enviar
+                fail_silently=False,
             )
+            logger.info(f"Email de notificación Google enviado al admin {admin_email} para solicitud {solicitud.username}")
             
         except Exception as e:
             # Log del error pero continuar
-            print(f"Error enviando email de notificación Google: {e}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error enviando email de notificación Google al admin: {e}")
+            print(f"Error enviando email de notificación Google al admin: {e}")

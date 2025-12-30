@@ -482,6 +482,9 @@ def registro_usuario(request):
                 from django.core.mail import send_mail
                 from django.conf import settings
                 from django.contrib.auth.models import User
+                import logging
+                
+                logger = logging.getLogger(__name__)
                 
                 # Obtener email del usuario sa (administrador)
                 try:
@@ -520,10 +523,12 @@ Wheeler Keeper
                     recipient_list=[admin_email],
                     fail_silently=False,
                 )
+                logger.info(f"Email de notificación enviado al admin {admin_email} para solicitud {solicitud.username}")
                 
             except Exception as e:
                 # Si falla el envío del email, log del error pero continúa
-                print(f"Error enviando email de notificación: {e}")
+                logger.error(f"Error enviando email de notificación al admin: {e}")
+                print(f"Error enviando email de notificación al admin: {e}")
             
             messages.success(
                 request, 

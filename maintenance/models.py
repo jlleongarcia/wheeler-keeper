@@ -662,9 +662,20 @@ class UserRegistrationRequest(models.Model):
         try:
             from django.core.mail import send_mail
             from django.conf import settings
+            import logging
+            
+            logger = logging.getLogger(__name__)
             
             # Obtener URL de login con dominio correcto
             login_url = self._get_login_url()
+            
+            # Mensaje diferente según el tipo de registro
+            if self.registration_type == 'google':
+                credenciales_info = "Ya puedes acceder al sistema usando tu cuenta de Google (botón 'Iniciar sesión con Google')."
+            else:
+                credenciales_info = f"""Ya puedes acceder al sistema con tus credenciales:
+- Nombre de usuario: {self.username}
+- Contraseña: La que proporcionaste al registrarte"""
             
             subject = '[Wheeler Keeper] ¡Tu solicitud ha sido aprobada!'
             message = f"""
@@ -672,9 +683,7 @@ Hola {self.first_name},
 
 ¡Excelentes noticias! Tu solicitud de registro en Wheeler Keeper ha sido aprobada.
 
-Ya puedes acceder al sistema con tus credenciales:
-- Nombre de usuario: {self.username}
-- Contraseña: La que proporcionaste al registrarte
+{credenciales_info}
 
 Accede al sistema:
 🔗 Iniciar sesión: {login_url}
@@ -692,9 +701,13 @@ El equipo de Wheeler Keeper
                 recipient_list=[self.email],
                 fail_silently=False,
             )
+            logger.info(f"Email de aprobación enviado exitosamente a {self.email}")
             
         except Exception as e:
             # Log del error pero no fallar la aprobación
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error enviando email de aprobación a {self.email}: {str(e)}")
             print(f"Error enviando email de aprobación a {self.email}: {str(e)}")
 
     def _enviar_email_rechazo(self, notas=""):
@@ -702,6 +715,9 @@ El equipo de Wheeler Keeper
         try:
             from django.core.mail import send_mail
             from django.conf import settings
+            import logging
+            
+            logger = logging.getLogger(__name__)
             
             subject = '[Wheeler Keeper] Solicitud de registro no aprobada'
             message = f"""
@@ -729,9 +745,13 @@ El equipo de Wheeler Keeper
                 recipient_list=[self.email],
                 fail_silently=False,
             )
+            logger.info(f"Email de rechazo enviado exitosamente a {self.email}")
             
         except Exception as e:
             # Log del error pero no fallar el rechazo
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error enviando email de rechazo a {self.email}: {str(e)}")
             print(f"Error enviando email de rechazo a {self.email}: {str(e)}")
 
 
