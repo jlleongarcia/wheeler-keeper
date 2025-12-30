@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin import AdminSite
+from copy import deepcopy
 from .models import (
     Vehiculo, TipoMantenimiento, IntervaloMantenimiento, 
     RegistroMantenimiento, ItemMantenimiento, UserRegistrationRequest,
@@ -9,12 +10,12 @@ from .models import (
 
 # Personalizar el AdminSite para reorganizar la visualización de los modelos
 class CustomAdminSite(AdminSite):
-    def get_app_list(self, request):
+    def get_app_list(self, request, app_label=None):
         """
         Reorganizar la lista de apps para mostrar UserRegistrationRequest
         en la sección de Autenticación y Autorización
         """
-        app_list = super().get_app_list(request)
+        app_list = super().get_app_list(request, app_label)
         
         # Buscar UserRegistrationRequest en Maintenance y moverlo a Auth
         user_reg_model = None
@@ -24,7 +25,7 @@ class CustomAdminSite(AdminSite):
                 models_to_keep = []
                 for model in app['models']:
                     if model['object_name'] == 'UserRegistrationRequest':
-                        user_reg_model = model.copy()
+                        user_reg_model = deepcopy(model)
                     else:
                         models_to_keep.append(model)
                 app['models'] = models_to_keep
