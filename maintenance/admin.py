@@ -1,9 +1,44 @@
 from django.contrib import admin
+from django.contrib.admin import AdminSite
 from .models import (
     Vehiculo, TipoMantenimiento, IntervaloMantenimiento, 
     RegistroMantenimiento, ItemMantenimiento, UserRegistrationRequest,
     NotificacionMantenimiento
 )
+
+
+# Personalizar el AdminSite para reorganizar la visualización de los modelos
+class CustomAdminSite(AdminSite):
+    def get_app_list(self, request):
+        """
+        Reorganizar la lista de apps para mostrar UserRegistrationRequest
+        en la sección de Autenticación y Autorización
+        """
+        app_list = super().get_app_list(request)
+        
+        # Buscar y remover UserRegistrationRequest de Maintenance
+        maintenance_models = []
+        user_reg_model = None
+        
+        for app in app_list:
+            if app['app_label'] == 'maintenance':
+                models_to_keep = []
+                for model in app['models']:
+                    if model['object_name'] == 'UserRegistrationRequest':
+                        user_reg_model = model
+                    else:
+                        models_to_keep.append(model)
+                app['models'] = models_to_keep
+            
+            # Agregar UserRegistrationRequest a Auth
+            if app['app_label'] == 'auth' and user_reg_model:
+                app['models'].append(user_reg_model)
+        
+        return app_list
+
+
+# Usar el AdminSite personalizado
+admin.site.__class__ = CustomAdminSite
 
 
 @admin.register(Vehiculo)

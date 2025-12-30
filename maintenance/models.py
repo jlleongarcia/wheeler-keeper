@@ -532,8 +532,6 @@ class UserRegistrationRequest(models.Model):
         verbose_name = "Solicitud de Registro"
         verbose_name_plural = "Solicitudes de Registro"
         ordering = ['-fecha_solicitud']
-        app_label = 'auth'
-        default_related_name = 'registration_requests'
     
     def __str__(self):
         return f"{self.username} ({self.first_name} {self.last_name}) - {self.get_status_display()}"
