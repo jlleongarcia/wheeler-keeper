@@ -11,7 +11,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de aceite motor',
                 'descripcion': 'Cambio del aceite del motor y filtro de aceite',
-                'categoria': 'Motor',
+                'categoria': 'motor',
                 'intervalo_km': 15000,
                 'intervalo_meses': 12,
                 'vehiculos_aplicables': 'todos'
@@ -19,7 +19,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de bujías',
                 'descripcion': 'Sustitución de bujías de encendido',
-                'categoria': 'Motor',
+                'categoria': 'motor',
                 'intervalo_km': 30000,
                 'intervalo_meses': 24,
                 'vehiculos_aplicables': 'todos'
@@ -27,7 +27,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de correa de distribución',
                 'descripcion': 'Sustitución de correa de distribución y tensor',
-                'categoria': 'Motor',
+                'categoria': 'motor',
                 'intervalo_km': 100000,
                 'intervalo_meses': 60,
                 'vehiculos_aplicables': 'todos'
@@ -35,7 +35,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de arandela del cárter',
                 'descripcion': 'Sustitución de arandela del cárter de aceite',
-                'categoria': 'Motor',
+                'categoria': 'motor',
                 'intervalo_km': 15000,
                 'intervalo_meses': 12,
                 'vehiculos_aplicables': 'todos'
@@ -43,7 +43,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de bomba de agua',
                 'descripcion': 'Sustitución de bomba de agua',
-                'categoria': 'Motor',
+                'categoria': 'motor',
                 'intervalo_km': 120000,
                 'intervalo_meses': 60,
                 'vehiculos_aplicables': 'todos'
@@ -53,7 +53,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de valvulina',
                 'descripcion': 'Cambio del aceite de la transmisión/caja de cambios',
-                'categoria': 'Transmision',
+                'categoria': 'transmision',
                 'intervalo_km': 60000,
                 'intervalo_meses': 48,
                 'vehiculos_aplicables': 'todos'
@@ -61,7 +61,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de embrague',
                 'descripcion': 'Sustitución del kit de embrague completo',
-                'categoria': 'Transmision',
+                'categoria': 'transmision',
                 'intervalo_km': 120000,
                 'intervalo_meses': 0,
                 'vehiculos_aplicables': 'todos'
@@ -69,7 +69,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de guardapolvos de transmisión',
                 'descripcion': 'Sustitución de guardapolvos de palieres y juntas homocinéticas',
-                'categoria': 'Transmision',
+                'categoria': 'transmision',
                 'intervalo_km': 80000,
                 'intervalo_meses': 0,
                 'vehiculos_aplicables': 'todos'
@@ -79,7 +79,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de pastillas de freno',
                 'descripcion': 'Sustitución de pastillas de freno',
-                'categoria': 'Frenos',
+                'categoria': 'frenos',
                 'intervalo_km': 60000,
                 'intervalo_meses': 0,
                 'vehiculos_aplicables': 'todos'
@@ -87,7 +87,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de líquido de frenos',
                 'descripcion': 'Cambio del líquido de frenos y sangrado del sistema',
-                'categoria': 'Frenos',
+                'categoria': 'frenos',
                 'intervalo_km': 0,
                 'intervalo_meses': 24,
                 'vehiculos_aplicables': 'todos'
@@ -97,7 +97,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de neumáticos',
                 'descripcion': 'Sustitución de neumáticos por desgaste',
-                'categoria': 'Neumaticos',
+                'categoria': 'neumaticos',
                 'intervalo_km': 50000,
                 'intervalo_meses': 60,
                 'vehiculos_aplicables': 'todos'
@@ -105,7 +105,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Alineación y equilibrado',
                 'descripcion': 'Alineación de ruedas y equilibrado de neumáticos',
-                'categoria': 'Neumaticos',
+                'categoria': 'neumaticos',
                 'intervalo_km': 20000,
                 'intervalo_meses': 0,
                 'vehiculos_aplicables': 'todos'
@@ -115,7 +115,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de filtro de combustible',
                 'descripcion': 'Sustitución del filtro de combustible',
-                'categoria': 'Filtros',
+                'categoria': 'filtros',
                 'intervalo_km': 15000,
                 'intervalo_meses': 24,
                 'vehiculos_aplicables': 'todos'
@@ -123,7 +123,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de filtro de aceite',
                 'descripcion': 'Sustitución del filtro de aceite del motor',
-                'categoria': 'Filtros',
+                'categoria': 'filtros',
                 'intervalo_km': 15000,
                 'intervalo_meses': 12,
                 'vehiculos_aplicables': 'todos'
@@ -131,7 +131,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de filtro de aire',
                 'descripcion': 'Sustitución del filtro de aire del motor',
-                'categoria': 'Filtros',
+                'categoria': 'filtros',
                 'intervalo_km': 15000,
                 'intervalo_meses': 12,
                 'vehiculos_aplicables': 'todos'
@@ -139,7 +139,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de filtro de polen',
                 'descripcion': 'Sustitución del filtro de polen del habitáculo',
-                'categoria': 'Filtros',
+                'categoria': 'filtros',
                 'intervalo_km': 15000,
                 'intervalo_meses': 12,
                 'vehiculos_aplicables': 'todos'
@@ -149,7 +149,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de amortiguadores',
                 'descripcion': 'Sustitución de amortiguadores delanteros o traseros',
-                'categoria': 'Suspension',
+                'categoria': 'suspension',
                 'intervalo_km': 80000,
                 'intervalo_meses': 0,
                 'vehiculos_aplicables': 'todos'
@@ -157,7 +157,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de guardapolvos de suspensión',
                 'descripcion': 'Sustitución de guardapolvos de amortiguadores y rótulas',
-                'categoria': 'Suspension',
+                'categoria': 'suspension',
                 'intervalo_km': 15000,
                 'intervalo_meses': 0,
                 'vehiculos_aplicables': 'todos'
@@ -167,7 +167,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de batería',
                 'descripcion': 'Sustitución de la batería del vehículo',
-                'categoria': 'Electrico',
+                'categoria': 'electrico',
                 'intervalo_km': 0,
                 'intervalo_meses': 48,
                 'vehiculos_aplicables': 'todos'
@@ -177,7 +177,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Recarga aire acondicionado',
                 'descripcion': 'Recarga del gas del sistema de aire acondicionado',
-                'categoria': 'Climatizacion',
+                'categoria': 'climatizacion',
                 'intervalo_km': 0,
                 'intervalo_meses': 36,
                 'vehiculos_aplicables': 'todos'
@@ -187,7 +187,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de cadena y piñones',
                 'descripcion': 'Sustitución de cadena de transmisión y piñones',
-                'categoria': 'Transmision',
+                'categoria': 'transmision',
                 'intervalo_km': 25000,
                 'intervalo_meses': 0,
                 'vehiculos_aplicables': 'moto'
@@ -195,7 +195,7 @@ class Command(BaseCommand):
             {
                 'nombre': 'Ajuste de válvulas',
                 'descripcion': 'Ajuste del juego de válvulas del motor',
-                'categoria': 'Motor',
+                'categoria': 'motor',
                 'intervalo_km': 15000,
                 'intervalo_meses': 0,
                 'vehiculos_aplicables': 'moto'
@@ -205,17 +205,17 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de líquido refrigerante',
                 'descripcion': 'Sustitución del líquido refrigerante del motor',
-                'categoria': 'Motor',
+                'categoria': 'motor',
                 'intervalo_km': 60000,
                 'intervalo_meses': 36,
                 'vehiculos_aplicables': 'todos'
             },
 
-            # Limpieza de lunas
+            # Limpieza y mantenimiento general
             {
                 'nombre': 'Cambio de líquido lavaparabrisas',
                 'descripcion': 'Sustitución del líquido lavaparabrisas',
-                'categoria': 'Lunas',
+                'categoria': 'otros',
                 'intervalo_km': 0,
                 'intervalo_meses': 12,
                 'vehiculos_aplicables': 'todos'
@@ -223,17 +223,15 @@ class Command(BaseCommand):
             {
                 'nombre': 'Cambio de escobillas limpiaparabrisas',
                 'descripcion': 'Sustitución de las escobillas del limpiaparabrisas',
-                'categoria': 'Lunas',
+                'categoria': 'otros',
                 'intervalo_km': 0,
                 'intervalo_meses': 12,
                 'vehiculos_aplicables': 'todos'
             },
-
-            # Luces
             {
                 'nombre': 'Cambio de bombillas',
                 'descripcion': 'Sustitución de bombillas (general)',
-                'categoria': 'Luces',
+                'categoria': 'otros',
                 'intervalo_km': 0,
                 'intervalo_meses': 0,
                 'vehiculos_aplicables': 'todos'
@@ -241,17 +239,23 @@ class Command(BaseCommand):
             {
                 'nombre': 'Pulimiento de faros',
                 'descripcion': 'Pulimiento y restauración de faros delanteros',
-                'categoria': 'Luces',
+                'categoria': 'otros',
                 'intervalo_km': 0,
                 'intervalo_meses': 12,
                 'vehiculos_aplicables': 'todos'
             },
-
-            # Otros
             {
                 'nombre': 'Copia de llaves',
                 'descripcion': 'Copia de llaves del vehículo',
-                'categoria': 'Otros',
+                'categoria': 'otros',
+                'intervalo_km': 0,
+                'intervalo_meses': 0,
+                'vehiculos_aplicables': 'todos'
+            },
+            {
+                'nombre': 'Cambio de alfombrillas',
+                'descripcion': 'Sustitución de alfombrillas del vehículo',
+                'categoria': 'otros',
                 'intervalo_km': 0,
                 'intervalo_meses': 0,
                 'vehiculos_aplicables': 'todos'
