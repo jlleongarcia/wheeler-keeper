@@ -7,7 +7,14 @@ from django.db.models import Q, Max
 from django.utils import timezone
 from datetime import timedelta
 from .models import Vehiculo, TipoMantenimiento, IntervaloMantenimiento, RegistroMantenimiento, ItemMantenimiento
-from .forms import VehiculoForm, RegistroMantenimientoForm, ItemMantenimientoFormSet, FiltroMantenimientoForm, UserRegistrationForm
+from .forms import (
+    VehiculoForm,
+    RegistroMantenimientoForm,
+    ItemMantenimientoFormSet,
+    FiltroMantenimientoForm,
+    UserRegistrationForm,
+    TipoTrabajoPersonalizadoForm,
+)
 
 
 @login_required
@@ -163,7 +170,7 @@ def agregar_mantenimiento(request):
     """Vista para agregar un nuevo registro de mantenimiento con múltiples ítems"""
     if request.method == 'POST':
         form = RegistroMantenimientoForm(request.POST, user=request.user)
-        formset = ItemMantenimientoFormSet(request.POST)
+        formset = ItemMantenimientoFormSet(request.POST, form_kwargs={'user': request.user})
         
         if form.is_valid() and formset.is_valid():
             mantenimiento = form.save()
@@ -198,7 +205,10 @@ def agregar_mantenimiento(request):
             messages.error(request, 'Por favor, corrige los errores en el formulario.')
     else:
         form = RegistroMantenimientoForm(user=request.user)
-        formset = ItemMantenimientoFormSet(queryset=ItemMantenimiento.objects.none())
+        formset = ItemMantenimientoFormSet(
+            queryset=ItemMantenimiento.objects.none(),
+            form_kwargs={'user': request.user}
+        )
         
         # Si se pasa un vehículo por parámetro, preseleccionarlo
         vehiculo_id = request.GET.get('vehiculo')
@@ -291,7 +301,11 @@ def editar_mantenimiento(request, mantenimiento_id):
     
     if request.method == 'POST':
         form = RegistroMantenimientoForm(request.POST, instance=mantenimiento, user=request.user)
-        formset = ItemMantenimientoFormSet(request.POST, instance=mantenimiento)
+        formset = ItemMantenimientoFormSet(
+            request.POST,
+            instance=mantenimiento,
+            form_kwargs={'user': request.user}
+        )
         
         if form.is_valid() and formset.is_valid():
             form.save()
@@ -302,7 +316,7 @@ def editar_mantenimiento(request, mantenimiento_id):
             messages.error(request, 'Por favor, corrige los errores en el formulario.')
     else:
         form = RegistroMantenimientoForm(instance=mantenimiento, user=request.user)
-        formset = ItemMantenimientoFormSet(instance=mantenimiento)
+        formset = ItemMantenimientoFormSet(instance=mantenimiento, form_kwargs={'user': request.user})
     
     return render(request, 'maintenance/mantenimientos/editar.html', {
         'form': form,
@@ -347,9 +361,9 @@ def proximos_mantenimientos(request):
     
     for vehiculo in vehiculos:
         # Obtener todos los tipos de mantenimiento aplicables a este vehículo
-        tipos_aplicables = TipoMantenimiento.objects.filter(
-            models.Q(vehiculos_aplicables='todos') | models.Q(vehiculos_aplicables=vehiculo.tipo),
-            activo=True
+        tipos_aplicables = TipoMantenimiento.visibles_para_usuario(
+            user=request.user,
+            vehiculo=vehiculo
         ).filter(
             models.Q(intervalo_km__gt=0) | models.Q(intervalo_meses__gt=0)
         )
@@ -439,9 +453,9 @@ def get_tipos_mantenimiento_json(request):
     
     try:
         vehiculo = Vehiculo.objects.get(id=vehiculo_id, propietario=request.user)
-        tipos = TipoMantenimiento.objects.filter(
-            Q(vehiculos_aplicables='todos') | Q(vehiculos_aplicables=vehiculo.tipo),
-            activo=True
+        tipos = TipoMantenimiento.visibles_para_usuario(
+            user=request.user,
+            vehiculo=vehiculo
         ).order_by('categoria', 'nombre')
         
         # Agrupar por categorías
@@ -556,7 +570,41 @@ def panel_usuario(request):
         vehiculo.intervalos_count = vehiculo.intervalos_personalizados.count()
     
     return render(request, 'maintenance/usuario/panel.html', {
-        'vehiculos': vehiculos
+        'vehiculos': vehiculos,
+        'tipos_trabajo_propios_count': TipoMantenimiento.objects.filter(propietario=request.user).count(),
+    })
+
+
+@login_required
+def gestionar_tipos_trabajo(request):
+    """Vista para crear y listar tipos de trabajo privados del usuario."""
+    if request.method == 'POST':
+        form = TipoTrabajoPersonalizadoForm(request.POST, user=request.user)
+        if form.is_valid():
+            tipo = form.save(commit=False)
+            tipo.propietario = request.user
+            tipo.activo = True
+
+            if not tipo.intervalo_km and not tipo.intervalo_meses:
+                tipo.intervalo_km = 15000
+                tipo.intervalo_meses = 12
+
+            tipo.save()
+            messages.success(request, f'Tipo de trabajo "{tipo.nombre}" creado correctamente.')
+            return redirect('maintenance:gestionar_tipos_trabajo')
+
+        messages.error(request, 'No se pudo crear el tipo de trabajo. Revisa los campos.')
+    else:
+        form = TipoTrabajoPersonalizadoForm(
+            user=request.user,
+            initial={'intervalo_km': 15000, 'intervalo_meses': 12}
+        )
+
+    tipos_propios = TipoMantenimiento.objects.filter(propietario=request.user).order_by('categoria', 'nombre')
+
+    return render(request, 'maintenance/usuario/tipos_trabajo.html', {
+        'form': form,
+        'tipos_propios': tipos_propios,
     })
 
 
@@ -566,7 +614,7 @@ def gestionar_intervalos(request, vehiculo_id):
     vehiculo = get_object_or_404(Vehiculo, id=vehiculo_id, propietario=request.user)
     
     # Obtener todos los tipos de mantenimiento
-    tipos_mantenimiento = TipoMantenimiento.objects.all().order_by('categoria', 'nombre')
+    tipos_mantenimiento = TipoMantenimiento.visibles_para_usuario(user=request.user).order_by('categoria', 'nombre')
     
     # Obtener intervalos personalizados existentes
     intervalos_existentes = IntervaloMantenimiento.objects.filter(vehiculo=vehiculo)
@@ -603,7 +651,10 @@ def gestionar_intervalos(request, vehiculo_id):
                     intervalos_dict[tipo_id].delete()
             else:
                 # Crear o actualizar el intervalo personalizado
-                tipo_mantenimiento = get_object_or_404(TipoMantenimiento, id=tipo_id)
+                tipo_mantenimiento = get_object_or_404(
+                    TipoMantenimiento.visibles_para_usuario(user=request.user),
+                    id=tipo_id
+                )
                 intervalo, created = IntervaloMantenimiento.objects.update_or_create(
                     vehiculo=vehiculo,
                     tipo_mantenimiento=tipo_mantenimiento,

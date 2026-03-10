@@ -1,0 +1,114 @@
+{% extends 'maintenance/base.html' %}
+
+{% block title %}Tipos de Trabajo Personalizados{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-tools"></i> Tipos de Trabajo Personalizados</h2>
+                <a href="{% url 'maintenance:panel_usuario' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver al Panel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-5 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5><i class="bi bi-plus-circle"></i> Crear Nuevo Tipo</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info small">
+                        Los tipos que crees aqui solo seran visibles para tu cuenta.
+                        Por defecto usaran 15000 km o 12 meses.
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.nombre.label }}</label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}<div class="text-danger small">{{ form.nombre.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.categoria.label }}</label>
+                            {{ form.categoria }}
+                            {% if form.categoria.errors %}<div class="text-danger small">{{ form.categoria.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.vehiculos_aplicables.label }}</label>
+                            {{ form.vehiculos_aplicables }}
+                            {% if form.vehiculos_aplicables.errors %}<div class="text-danger small">{{ form.vehiculos_aplicables.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label">{{ form.intervalo_km.label }}</label>
+                                {{ form.intervalo_km }}
+                                {% if form.intervalo_km.errors %}<div class="text-danger small">{{ form.intervalo_km.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label">{{ form.intervalo_meses.label }}</label>
+                                {{ form.intervalo_meses }}
+                                {% if form.intervalo_meses.errors %}<div class="text-danger small">{{ form.intervalo_meses.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.descripcion.label }}</label>
+                            {{ form.descripcion }}
+                            {% if form.descripcion.errors %}<div class="text-danger small">{{ form.descripcion.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-check-circle"></i> Guardar Tipo de Trabajo
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-list-check"></i> Mis Tipos de Trabajo</h5>
+                    <span class="badge bg-primary">{{ tipos_propios.count }}</span>
+                </div>
+                <div class="card-body">
+                    {% if tipos_propios %}
+                        <div class="list-group">
+                            {% for tipo in tipos_propios %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">{{ tipo.nombre }}</h6>
+                                            <small class="text-muted">
+                                                {{ tipo.get_categoria_display }} | {{ tipo.get_vehiculos_aplicables_display }}
+                                            </small>
+                                            {% if tipo.descripcion %}
+                                                <p class="mb-0 mt-2 small text-secondary">{{ tipo.descripcion }}</p>
+                                            {% endif %}
+                                        </div>
+                                        <span class="badge bg-light text-dark">
+                                            {{ tipo.intervalo_km }} km / {{ tipo.intervalo_meses }} meses
+                                        </span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">Aun no has creado tipos de trabajo personalizados.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -34,5 +34,6 @@ urlpatterns = [
     
     # Panel de usuario
     path('usuario/panel/', views.panel_usuario, name='panel_usuario'),
+    path('usuario/tipos-trabajo/', views.gestionar_tipos_trabajo, name='gestionar_tipos_trabajo'),
     path('usuario/vehiculos/<int:vehiculo_id>/intervalos/', views.gestionar_intervalos, name='gestionar_intervalos'),
 ]

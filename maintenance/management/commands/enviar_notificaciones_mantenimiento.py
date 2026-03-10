@@ -94,9 +94,9 @@ class Command(BaseCommand):
             mantenimientos_vehiculo = []
             
             # Obtener todos los tipos de mantenimiento aplicables
-            tipos_aplicables = TipoMantenimiento.objects.filter(
-                models.Q(vehiculos_aplicables='todos') | models.Q(vehiculos_aplicables=vehiculo.tipo),
-                activo=True
+            tipos_aplicables = TipoMantenimiento.visibles_para_usuario(
+                user=usuario,
+                vehiculo=vehiculo
             ).filter(
                 models.Q(intervalo_km__gt=0) | models.Q(intervalo_meses__gt=0)
             )

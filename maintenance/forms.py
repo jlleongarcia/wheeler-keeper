@@ -6,7 +6,7 @@ from itertools import groupby
 from .models import Vehiculo, TipoMantenimiento, RegistroMantenimiento, ItemMantenimiento
 
 
-def tipo_mantenimiento_categoria_choices(vehiculo=None, include_empty=True):
+def tipo_mantenimiento_categoria_choices(vehiculo=None, user=None, include_empty=True):
     """Return tipos de mantenimiento grouped by categoria, suitable for using as optgroups for select inputs"""
 
     def categoria_display(t):
@@ -15,12 +15,7 @@ def tipo_mantenimiento_categoria_choices(vehiculo=None, include_empty=True):
     def tipo_name(t):
         return "%s" % (t.nombre)
 
-    tipos = TipoMantenimiento.objects.filter(activo=True).select_related().order_by("categoria", "nombre")
-
-    if vehiculo:
-        tipos = tipos.filter(
-            models.Q(vehiculos_aplicables='todos') | models.Q(vehiculos_aplicables=vehiculo.tipo)
-        )
+    tipos = TipoMantenimiento.visibles_para_usuario(user=user, vehiculo=vehiculo).order_by("categoria", "nombre")
 
     choices = [(categoria, list(tipos_cat)) for (categoria, tipos_cat) in groupby(tipos, key=categoria_display)]
     choices = [(categoria, [(t.id, tipo_name(t)) for t in tipos_cat]) for (categoria, tipos_cat) in choices]
@@ -34,15 +29,12 @@ def tipo_mantenimiento_categoria_choices(vehiculo=None, include_empty=True):
 class TipoMantenimientoModelChoiceField(forms.ModelChoiceField):
     """Campo personalizado para mostrar tipos de mantenimiento agrupados por categoría"""
     
-    def __init__(self, vehiculo=None, *args, **kwargs):
+    def __init__(self, vehiculo=None, user=None, *args, **kwargs):
         self.vehiculo = vehiculo
+        self.user = user
         # Configurar queryset base - usar none() para evitar consultas en import
         try:
-            queryset = TipoMantenimiento.objects.filter(activo=True)
-            if vehiculo:
-                queryset = queryset.filter(
-                    models.Q(vehiculos_aplicables='todos') | models.Q(vehiculos_aplicables=vehiculo.tipo)
-                )
+            queryset = TipoMantenimiento.visibles_para_usuario(user=user, vehiculo=vehiculo)
         except Exception:
             # Si hay error de DB (como en primera instalación), usar queryset vacío
             queryset = TipoMantenimiento.objects.none()
@@ -55,7 +47,11 @@ class TipoMantenimientoModelChoiceField(forms.ModelChoiceField):
     def update_choices(self):
         """Actualiza las opciones con agrupación por categorías"""
         try:
-            self.choices = tipo_mantenimiento_categoria_choices(vehiculo=self.vehiculo, include_empty=True)
+            self.choices = tipo_mantenimiento_categoria_choices(
+                vehiculo=self.vehiculo,
+                user=self.user,
+                include_empty=True
+            )
             self._choices_updated = True
         except Exception:
             # Si hay error de DB, usar choices vacías
@@ -78,12 +74,14 @@ class TipoMantenimientoModelChoiceField(forms.ModelChoiceField):
         """Actualiza el vehículo y regenera las opciones"""
         self.vehiculo = vehiculo
         # Actualizar queryset
-        queryset = TipoMantenimiento.objects.filter(activo=True)
-        if vehiculo:
-            queryset = queryset.filter(
-                models.Q(vehiculos_aplicables='todos') | models.Q(vehiculos_aplicables=vehiculo.tipo)
-            )
+        queryset = TipoMantenimiento.visibles_para_usuario(user=self.user, vehiculo=vehiculo)
         self.queryset = queryset
+        self.update_choices()
+
+    def set_user(self, user):
+        """Actualiza el usuario y regenera las opciones visibles."""
+        self.user = user
+        self.queryset = TipoMantenimiento.visibles_para_usuario(user=user, vehiculo=self.vehiculo)
         self.update_choices()
 
 
@@ -470,10 +468,20 @@ class ItemMantenimientoForm(forms.ModelForm):
     
     # Campo personalizado para tipos de mantenimiento agrupados
     tipo_mantenimiento = TipoMantenimientoModelChoiceField(
-        queryset=TipoMantenimiento.objects.filter(activo=True),
+        queryset=TipoMantenimiento.objects.none(),
         empty_label="---------",
         widget=forms.Select(attrs={'class': 'form-control item-tipo'})
     )
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        if self.user:
+            self.fields['tipo_mantenimiento'].set_user(self.user)
+
+        if self.instance.pk and getattr(self.instance, 'registro_id', None):
+            self.fields['tipo_mantenimiento'].set_vehiculo(self.instance.registro.vehiculo)
     
     class Meta:
         model = ItemMantenimiento
@@ -518,3 +526,49 @@ ItemMantenimientoFormSet = inlineformset_factory(
     validate_min=True,  # Validar que se requiera al menos 1 ítem
     can_delete=False  # Deshabilitamos el DELETE automático ya que tenemos botones personalizados
 )
+
+
+class TipoTrabajoPersonalizadoForm(forms.ModelForm):
+    """Formulario para crear tipos de trabajo privados del usuario."""
+
+    class Meta:
+        model = TipoMantenimiento
+        fields = ['nombre', 'descripcion', 'categoria', 'vehiculos_aplicables', 'intervalo_km', 'intervalo_meses']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Cambio aceite caja automática'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Descripción opcional'}),
+            'categoria': forms.Select(attrs={'class': 'form-control'}),
+            'vehiculos_aplicables': forms.Select(attrs={'class': 'form-control'}),
+            'intervalo_km': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+            'intervalo_meses': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        self.fields['intervalo_km'].initial = 15000
+        self.fields['intervalo_meses'].initial = 12
+
+    def clean_nombre(self):
+        nombre = self.cleaned_data['nombre'].strip()
+        if not nombre:
+            raise forms.ValidationError('El nombre es obligatorio.')
+
+        if self.user and TipoMantenimiento.objects.filter(
+            propietario=self.user,
+            nombre__iexact=nombre
+        ).exists():
+            raise forms.ValidationError('Ya tienes un tipo de trabajo con ese nombre.')
+
+        return nombre
+
+    def clean(self):
+        cleaned_data = super().clean()
+        km = cleaned_data.get('intervalo_km')
+        meses = cleaned_data.get('intervalo_meses')
+
+        if (km is None or km == '') and (meses is None or meses == ''):
+            cleaned_data['intervalo_km'] = 15000
+            cleaned_data['intervalo_meses'] = 12
+
+        return cleaned_data

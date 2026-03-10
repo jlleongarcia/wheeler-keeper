@@ -154,11 +154,27 @@ class TipoMantenimiento(models.Model):
         verbose_name="Activo",
         help_text="Si está activo aparecerá en las listas"
     )
+
+    propietario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='tipos_mantenimiento_propios',
+        verbose_name="Propietario",
+        help_text="Si está vacío, es un tipo global del sistema"
+    )
     
     class Meta:
         verbose_name = "Tipo de Mantenimiento"
         verbose_name_plural = "Tipos de Mantenimiento"
         ordering = ['categoria', 'nombre']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['propietario', 'nombre'],
+                name='unique_tipo_mantenimiento_por_propietario'
+            )
+        ]
     
     def __str__(self):
         return self.nombre
@@ -167,6 +183,25 @@ class TipoMantenimiento(models.Model):
         """Verifica si este tipo de mantenimiento es aplicable al vehículo dado"""
         return (self.vehiculos_aplicables == 'todos' or 
                 self.vehiculos_aplicables == vehiculo.tipo)
+
+    @classmethod
+    def visibles_para_usuario(cls, user=None, vehiculo=None):
+        """Tipos activos visibles para el usuario (globales + propios)."""
+        queryset = cls.objects.filter(activo=True)
+
+        if user and user.is_authenticated:
+            queryset = queryset.filter(
+                models.Q(propietario__isnull=True) | models.Q(propietario=user)
+            )
+        else:
+            queryset = queryset.filter(propietario__isnull=True)
+
+        if vehiculo:
+            queryset = queryset.filter(
+                models.Q(vehiculos_aplicables='todos') | models.Q(vehiculos_aplicables=vehiculo.tipo)
+            )
+
+        return queryset
 
 
 class IntervaloMantenimiento(models.Model):
@@ -584,7 +619,7 @@ class UserRegistrationRequest(models.Model):
         self.save()
         
         # Enviar email de notificación al usuario aprobado
-        self._enviar_email_aprobacion()
+        self._email_aprobacion_enviado = self._enviar_email_aprobacion()
         
         return user
     
@@ -628,7 +663,7 @@ class UserRegistrationRequest(models.Model):
         self.save()
         
         # Enviar email de notificación al usuario rechazado
-        self._enviar_email_rechazo(notas)
+        self._email_rechazo_enviado = self._enviar_email_rechazo(notas)
 
     def _get_login_url(self):
         """Obtener URL de login con el dominio principal correcto"""
@@ -702,6 +737,7 @@ El equipo de Wheeler Keeper
                 fail_silently=False,
             )
             logger.info(f"Email de aprobación enviado exitosamente a {self.email}")
+            return True
             
         except Exception as e:
             # Log del error pero no fallar la aprobación
@@ -709,6 +745,7 @@ El equipo de Wheeler Keeper
             logger = logging.getLogger(__name__)
             logger.error(f"Error enviando email de aprobación a {self.email}: {str(e)}")
             print(f"Error enviando email de aprobación a {self.email}: {str(e)}")
+            return False
 
     def _enviar_email_rechazo(self, notas=""):
         """Enviar email de notificación cuando se rechaza la solicitud"""
@@ -746,6 +783,7 @@ El equipo de Wheeler Keeper
                 fail_silently=False,
             )
             logger.info(f"Email de rechazo enviado exitosamente a {self.email}")
+            return True
             
         except Exception as e:
             # Log del error pero no fallar el rechazo
@@ -753,6 +791,7 @@ El equipo de Wheeler Keeper
             logger = logging.getLogger(__name__)
             logger.error(f"Error enviando email de rechazo a {self.email}: {str(e)}")
             print(f"Error enviando email de rechazo a {self.email}: {str(e)}")
+            return False
 
 
 class NotificacionMantenimiento(models.Model):

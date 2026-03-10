@@ -100,6 +100,7 @@ class TipoMantenimientoAdmin(admin.ModelAdmin):
     
     list_display = [
         'nombre',
+        'propietario',
         'categoria', 
         'vehiculos_aplicables',
         'intervalo_km',
@@ -108,6 +109,7 @@ class TipoMantenimientoAdmin(admin.ModelAdmin):
     ]
     
     list_filter = [
+        'propietario',
         'categoria',
         'vehiculos_aplicables', 
         'activo'
@@ -115,7 +117,8 @@ class TipoMantenimientoAdmin(admin.ModelAdmin):
     
     search_fields = [
         'nombre',
-        'descripcion'
+        'descripcion',
+        'propietario__username'
     ]
     
     list_editable = [
@@ -124,7 +127,7 @@ class TipoMantenimientoAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Información Básica', {
-            'fields': ('nombre', 'descripcion', 'categoria', 'activo')
+            'fields': ('nombre', 'propietario', 'descripcion', 'categoria', 'activo')
         }),
         ('Intervalos de Mantenimiento', {
             'fields': ('intervalo_km', 'intervalo_meses'),
@@ -299,6 +302,12 @@ class UserRegistrationRequestAdmin(admin.ModelAdmin):
                     f"Usuario '{usuario.username}' creado exitosamente.",
                     level='success'
                 )
+                if not getattr(solicitud, '_email_aprobacion_enviado', True):
+                    self.message_user(
+                        request,
+                        f"Usuario '{usuario.username}' creado, pero no se pudo enviar email de aprobación a {solicitud.email}.",
+                        level='warning'
+                    )
             except ValueError as e:
                 errores.append(f"Error con {solicitud.username}: {str(e)}")
         
@@ -322,6 +331,12 @@ class UserRegistrationRequestAdmin(admin.ModelAdmin):
             try:
                 solicitud.rechazar(request.user, "Rechazado desde el panel de administración")
                 rechazadas += 1
+                if not getattr(solicitud, '_email_rechazo_enviado', True):
+                    self.message_user(
+                        request,
+                        f"Solicitud de '{solicitud.username}' rechazada, pero no se pudo enviar email a {solicitud.email}.",
+                        level='warning'
+                    )
             except ValueError as e:
                 self.message_user(request, f"Error: {str(e)}", level='error')
         
