@@ -602,9 +602,58 @@ def gestionar_tipos_trabajo(request):
 
     tipos_propios = TipoMantenimiento.objects.filter(propietario=request.user).order_by('categoria', 'nombre')
 
+    # Anotar si cada tipo tiene mantenimientos registrados (para controlar el botón eliminar)
+    for tipo in tipos_propios:
+        tipo.tiene_registros = ItemMantenimiento.objects.filter(tipo_mantenimiento=tipo).exists()
+
     return render(request, 'maintenance/usuario/tipos_trabajo.html', {
         'form': form,
         'tipos_propios': tipos_propios,
+    })
+
+
+@login_required
+def editar_tipo_trabajo(request, tipo_id):
+    """Vista para editar un tipo de trabajo personalizado del usuario."""
+    tipo = get_object_or_404(TipoMantenimiento, id=tipo_id, propietario=request.user)
+
+    if request.method == 'POST':
+        form = TipoTrabajoPersonalizadoForm(request.POST, instance=tipo, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Tipo de trabajo "{tipo.nombre}" actualizado correctamente.')
+            return redirect('maintenance:gestionar_tipos_trabajo')
+        messages.error(request, 'No se pudo actualizar el tipo de trabajo. Revisa los campos.')
+    else:
+        form = TipoTrabajoPersonalizadoForm(instance=tipo, user=request.user)
+
+    return render(request, 'maintenance/usuario/editar_tipo_trabajo.html', {
+        'form': form,
+        'tipo': tipo,
+    })
+
+
+@login_required
+def eliminar_tipo_trabajo(request, tipo_id):
+    """Eliminar un tipo de trabajo personalizado si no tiene registros."""
+    tipo = get_object_or_404(TipoMantenimiento, id=tipo_id, propietario=request.user)
+
+    tiene_registros = ItemMantenimiento.objects.filter(tipo_mantenimiento=tipo).exists()
+    if tiene_registros:
+        messages.error(
+            request,
+            f'No se puede eliminar "{tipo.nombre}" porque tiene mantenimientos registrados.'
+        )
+        return redirect('maintenance:gestionar_tipos_trabajo')
+
+    if request.method == 'POST':
+        nombre = tipo.nombre
+        tipo.delete()
+        messages.success(request, f'Tipo de trabajo "{nombre}" eliminado correctamente.')
+        return redirect('maintenance:gestionar_tipos_trabajo')
+
+    return render(request, 'maintenance/usuario/eliminar_tipo_trabajo.html', {
+        'tipo': tipo,
     })
 
 

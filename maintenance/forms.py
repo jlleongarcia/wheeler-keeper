@@ -168,6 +168,10 @@ class RegistroMantenimientoForm(forms.ModelForm):
         # Filtrar vehículos por propietario
         if self.user:
             self.fields['vehiculo'].queryset = Vehiculo.objects.filter(propietario=self.user)
+        
+        # Establecer fecha por defecto como hoy
+        if not self.instance.pk:
+            self.fields['fecha_realizacion'].initial = timezone.now().date()
     
     class Meta:
         model = RegistroMantenimiento
@@ -225,30 +229,6 @@ class RegistroMantenimientoForm(forms.ModelForm):
                 }
             ),
         }
-    
-    def __init__(self, *args, user=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        # Filtrar vehículos por usuario si es necesario
-        if user:
-            self.fields['vehiculo'].queryset = Vehiculo.objects.filter(
-                propietario=user
-            )
-        
-        # Si estamos editando un mantenimiento existente, configurar el campo con el vehículo
-        if self.instance.pk and hasattr(self.instance, 'vehiculo'):
-            vehiculo = self.instance.vehiculo
-            self.fields['tipo_mantenimiento'].set_vehiculo(vehiculo)
-        
-        # Establecer fecha por defecto como hoy
-        if not self.instance.pk:
-            self.fields['fecha_realizacion'].initial = timezone.now().date()
-    
-    def set_vehiculo_for_tipos(self, vehiculo):
-        """Método para actualizar los tipos de mantenimiento según el vehículo seleccionado"""
-        if hasattr(self.fields['tipo_mantenimiento'], 'set_vehiculo'):
-            self.fields['tipo_mantenimiento'].set_vehiculo(vehiculo)
-    
 
     def clean_fecha_realizacion(self):
         """Validar que la fecha no sea futura"""
@@ -274,16 +254,6 @@ class RegistroMantenimientoForm(forms.ModelForm):
     def clean(self):
         """Validación cruzada del formulario"""
         cleaned_data = super().clean()
-        vehiculo = cleaned_data.get('vehiculo')
-        tipo_mantenimiento = cleaned_data.get('tipo_mantenimiento')
-        
-        # Verificar que el tipo de mantenimiento sea aplicable al vehículo
-        if vehiculo and tipo_mantenimiento:
-            if not tipo_mantenimiento.es_aplicable_a_vehiculo(vehiculo):
-                raise forms.ValidationError(
-                    f'El mantenimiento "{tipo_mantenimiento.nombre}" no es aplicable a {vehiculo.get_tipo_display()}'
-                )
-        
         return cleaned_data
 
 

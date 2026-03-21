@@ -96,9 +96,23 @@
                                                 <p class="mb-0 mt-2 small text-secondary">{{ tipo.descripcion }}</p>
                                             {% endif %}
                                         </div>
-                                        <span class="badge bg-light text-dark">
-                                            {{ tipo.intervalo_km }} km / {{ tipo.intervalo_meses }} meses
-                                        </span>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-light text-dark me-2">
+                                                {{ tipo.intervalo_km }} km / {{ tipo.intervalo_meses }} meses
+                                            </span>
+                                            <a href="{% url 'maintenance:editar_tipo_trabajo' tipo.id %}" class="btn btn-outline-primary btn-sm" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            {% if not tipo.tiene_registros %}
+                                                <a href="{% url 'maintenance:eliminar_tipo_trabajo' tipo.id %}" class="btn btn-outline-danger btn-sm" title="Eliminar">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            {% else %}
+                                                <button class="btn btn-outline-secondary btn-sm" disabled title="No se puede eliminar: tiene mantenimientos registrados">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                             {% endfor %}

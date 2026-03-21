@@ -35,5 +35,7 @@ urlpatterns = [
     # Panel de usuario
     path('usuario/panel/', views.panel_usuario, name='panel_usuario'),
     path('usuario/tipos-trabajo/', views.gestionar_tipos_trabajo, name='gestionar_tipos_trabajo'),
+    path('usuario/tipos-trabajo/<int:tipo_id>/editar/', views.editar_tipo_trabajo, name='editar_tipo_trabajo'),
+    path('usuario/tipos-trabajo/<int:tipo_id>/eliminar/', views.eliminar_tipo_trabajo, name='eliminar_tipo_trabajo'),
     path('usuario/vehiculos/<int:vehiculo_id>/intervalos/', views.gestionar_intervalos, name='gestionar_intervalos'),
 ]
