@@ -299,6 +299,9 @@ If you don't have Make installed:
 # 1. Build images
 docker-compose build
 
+# Optionally, you can just pull the image created with CI/CD Build MultiArch
+docker-compose pull wheeler-keeper
+
 # 2. Start ONLY the database
 docker-compose up -d db
 
