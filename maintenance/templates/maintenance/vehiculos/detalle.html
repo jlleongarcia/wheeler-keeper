@@ -136,9 +136,8 @@
                                 </table>
                             </div>
                             <div class="text-end mt-3">
-                                <a href="/admin/maintenance/intervalomantenimiento/" 
-                                   class="btn btn-outline-info btn-sm" 
-                                   target="_blank">
+                                <a href="{% url 'maintenance:gestionar_intervalos' vehiculo.id %}" 
+                                   class="btn btn-outline-info btn-sm">
                                     <i class="bi bi-gear"></i> Gestionar Intervalos
                                 </a>
                             </div>
@@ -183,7 +182,7 @@
             </div>
 
             <!-- Acciones -->
-            <div class="col-md-4">'
+            <div class="col-md-4">
                 <div class="card shadow-sm">
                     <div class="card-header">
                         <h6 class="mb-0">
@@ -205,12 +204,11 @@
                                 Registrar Mantenimiento
                             </a>
                             
-                            <a href="/admin/maintenance/intervalomantenimiento/add/?vehiculo={{ vehiculo.id }}" 
-                               class="btn btn-outline-info" 
-                               target="_blank"
+                            <a href="{% url 'maintenance:gestionar_intervalos' vehiculo.id %}" 
+                               class="btn btn-outline-info"
                                title="Personalizar intervalos de mantenimiento">
                                 <i class="bi bi-clock"></i>
-                                Personalizar Intervalos
+                                Gestionar Intervalos
                             </a>
                             
                             <button type="button" class="btn btn-outline-danger" 
