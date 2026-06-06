@@ -336,7 +336,7 @@ make logs                              # with Make
 
 ##### Complete restart
 ```bash
-docker-compose down -v                 # Stop everything
+docker-compose down                    # Stop everything
 docker-compose up -d db                # Only DB
 sleep 15                               # Wait
 docker-compose up -d wheeler-keeper    # Application
