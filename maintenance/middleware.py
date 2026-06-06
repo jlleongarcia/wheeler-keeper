@@ -101,8 +101,8 @@ class NotificacionesProgramadasMiddleware(MiddlewareMixin):
         if not request.user.is_authenticated:
             return None
         
-        # Solo en la página principal o dashboard
-        if request.path not in ['/', '/inicio/', '/dashboard/']:
+        # Solo en la página principal de la app (montada en /mantenimiento/)
+        if request.path not in ['/', '/mantenimiento/', '/mantenimiento']:
             return None
         
         # Verificar si ya se comprobó hoy para este usuario

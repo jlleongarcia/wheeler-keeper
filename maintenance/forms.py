@@ -241,14 +241,15 @@ class RegistroMantenimientoForm(forms.ModelForm):
         """Validar que el kilometraje sea coherente"""
         kilometraje = self.cleaned_data.get('kilometraje_realizacion')
         vehiculo = self.cleaned_data.get('vehiculo')
-        
-        if kilometraje and vehiculo:
-            # No puede ser mayor que el kilometraje actual
+
+        # Only validate km for new records; when editing historical records the
+        # vehicle's current km may already have been updated past the record km.
+        if kilometraje and vehiculo and not self.instance.pk:
             if kilometraje > vehiculo.kilometraje_actual:
                 raise forms.ValidationError(
                     f'El kilometraje no puede ser mayor al actual del vehículo ({vehiculo.kilometraje_actual} km)'
                 )
-        
+
         return kilometraje
     
     def clean(self):
@@ -490,11 +491,23 @@ ItemMantenimientoFormSet = inlineformset_factory(
     RegistroMantenimiento,
     ItemMantenimiento,
     form=ItemMantenimientoForm,
-    extra=20,  # Número de formularios vacíos por defecto
-    max_num=20,  # Máximo número de formularios permitidos
-    min_num=1,  # Mínimo 1 ítem requerido
-    validate_min=True,  # Validar que se requiera al menos 1 ítem
-    can_delete=False  # Deshabilitamos el DELETE automático ya que tenemos botones personalizados
+    extra=20,
+    max_num=20,
+    min_num=1,
+    validate_min=True,
+    can_delete=False
+)
+
+# Formset para editar mantenimientos existentes: soporta eliminación de ítems
+ItemMantenimientoEditFormSet = inlineformset_factory(
+    RegistroMantenimiento,
+    ItemMantenimiento,
+    form=ItemMantenimientoForm,
+    extra=3,
+    max_num=20,
+    min_num=1,
+    validate_min=True,
+    can_delete=True
 )
 
 
@@ -524,11 +537,12 @@ class TipoTrabajoPersonalizadoForm(forms.ModelForm):
         if not nombre:
             raise forms.ValidationError('El nombre es obligatorio.')
 
-        if self.user and TipoMantenimiento.objects.filter(
-            propietario=self.user,
-            nombre__iexact=nombre
-        ).exists():
-            raise forms.ValidationError('Ya tienes un tipo de trabajo con ese nombre.')
+        if self.user:
+            qs = TipoMantenimiento.objects.filter(propietario=self.user, nombre__iexact=nombre)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError('Ya tienes un tipo de trabajo con ese nombre.')
 
         return nombre
 

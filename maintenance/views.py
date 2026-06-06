@@ -11,6 +11,7 @@ from .forms import (
     VehiculoForm,
     RegistroMantenimientoForm,
     ItemMantenimientoFormSet,
+    ItemMantenimientoEditFormSet,
     FiltroMantenimientoForm,
     UserRegistrationForm,
     TipoTrabajoPersonalizadoForm,
@@ -301,22 +302,27 @@ def editar_mantenimiento(request, mantenimiento_id):
     
     if request.method == 'POST':
         form = RegistroMantenimientoForm(request.POST, instance=mantenimiento, user=request.user)
-        formset = ItemMantenimientoFormSet(
+        formset = ItemMantenimientoEditFormSet(
             request.POST,
             instance=mantenimiento,
             form_kwargs={'user': request.user}
         )
-        
+
         if form.is_valid() and formset.is_valid():
             form.save()
             formset.save()
             messages.success(request, 'Registro de mantenimiento actualizado correctamente.')
             return redirect('maintenance:detalle_mantenimiento', mantenimiento_id=mantenimiento.id)
         else:
+            for field, errors in form.errors.items():
+                messages.error(request, f'{field}: {errors[0]}')
+            for i, form_errors in enumerate(formset.errors):
+                for field, errors in form_errors.items():
+                    messages.error(request, f'Ítem {i+1} - {field}: {errors[0]}')
             messages.error(request, 'Por favor, corrige los errores en el formulario.')
     else:
         form = RegistroMantenimientoForm(instance=mantenimiento, user=request.user)
-        formset = ItemMantenimientoFormSet(instance=mantenimiento, form_kwargs={'user': request.user})
+        formset = ItemMantenimientoEditFormSet(instance=mantenimiento, form_kwargs={'user': request.user})
     
     return render(request, 'maintenance/mantenimientos/editar.html', {
         'form': form,

@@ -34,11 +34,6 @@
                                 <small class="text-muted">({{ items.count }} trabajos)</small>
                             {% endif %}
                         </h3>
-                        {% if es_proximo %}
-                            <span class="badge bg-warning text-dark fs-6">
-                                <i class="bi bi-exclamation-triangle"></i> {{ mensaje_alerta }}
-                            </span>
-                        {% endif %}
                     </div>
                 </div>
                 <div class="card-body">
@@ -215,12 +210,12 @@
                     {% endif %}
                     
                     <!-- Notas -->
-                    {% if mantenimiento.notas %}
+                    {% if mantenimiento.notas_generales %}
                         <div class="row">
                             <div class="col-12">
                                 <h5><i class="bi bi-file-text"></i> Notas</h5>
                                 <div class="bg-light p-3 rounded">
-                                    {{ mantenimiento.notas|linebreaks }}
+                                    {{ mantenimiento.notas_generales|linebreaks }}
                                 </div>
                             </div>
                         </div>

@@ -127,15 +127,7 @@
                                 </div>
                                 <div class="card-footer">
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            {% with mantenimiento.es_vencimiento_proximo as proximo_info %}
-                                                {% if proximo_info.0 %}
-                                                    <span class="badge bg-warning text-dark">
-                                                        <i class="bi bi-exclamation-triangle"></i> {{ proximo_info.1 }}
-                                                    </span>
-                                                {% endif %}
-                                            {% endwith %}
-                                        </div>
+                                        <div></div>
                                         <div class="btn-group btn-group-sm">
                                             <a href="{% url 'maintenance:detalle_mantenimiento' mantenimiento.id %}" 
                                                class="btn btn-outline-primary" title="Ver detalles">

@@ -116,11 +116,9 @@
                                 <div class="formset-form border rounded p-3 mb-3" {% if not item_form.instance.pk and not forloop.first %}style="display: none;"{% endif %}>
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <h6 class="mb-0">Ítem <span class="item-number">{{ forloop.counter }}</span></h6>
-                                        {% if not forloop.first %}
-                                            <button type="button" class="btn btn-outline-danger btn-sm remove-form">
-                                                <i class="bi bi-trash"></i> Eliminar
-                                            </button>
-                                        {% endif %}
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-form">
+                                            <i class="bi bi-trash"></i> Eliminar
+                                        </button>
                                     </div>
 
                                     <div class="row">
@@ -171,9 +169,7 @@
                                         </div>
                                     </div>
 
-                                    {% if formset.can_delete %}
-                                        {{ item_form.DELETE }}
-                                    {% endif %}
+                                    <div style="display:none;">{{ item_form.DELETE }}</div>
                                     {{ item_form.id }}
                                 </div>
                             {% endfor %}
@@ -228,33 +224,31 @@
 document.addEventListener('DOMContentLoaded', function() {
     const formsetContainer = document.getElementById('formset-container');
     const addButton = document.getElementById('add-form');
-    const totalFormsInput = document.getElementById('id_items-TOTAL_FORMS');
 
     function calculateTotals() {
         let totalMateriales = 0;
-        let manoObraTotal = 0;
 
-        document.querySelectorAll('.formset-form:not([style*="display: none"])').forEach(function(form) {
+        formsetContainer.querySelectorAll('.formset-form').forEach(function(form) {
+            // Skip forms marked for deletion or hidden
+            const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
+            if (deleteCheckbox && deleteCheckbox.checked) return;
+            if (form.style.display === 'none') return;
+
             const cantidad = parseFloat(form.querySelector('input[name$="cantidad"]').value) || 0;
             const costoUnitario = parseFloat(form.querySelector('input[name$="costo_unitario"]').value) || 0;
             const costoTotal = cantidad * costoUnitario;
 
-            const costoTotalDisplay = form.querySelector('.costo-total-display');
-            if (costoTotalDisplay) {
-                costoTotalDisplay.value = costoTotal.toFixed(2) + ' €';
-            }
+            const display = form.querySelector('.costo-total-display');
+            if (display) display.value = costoTotal.toFixed(2) + ' €';
 
             totalMateriales += costoTotal;
         });
 
         const manoObraInput = document.getElementById('id_costo_mano_obra_total');
-        if (manoObraInput) {
-            manoObraTotal = parseFloat(manoObraInput.value) || 0;
-        }
-
+        const manoObraTotal = manoObraInput ? (parseFloat(manoObraInput.value) || 0) : 0;
         const subtotal = totalMateriales + manoObraTotal;
-        const ivaIncluidoCheckbox = document.getElementById('id_iva_incluido');
-        const ivaIncluido = ivaIncluidoCheckbox ? ivaIncluidoCheckbox.checked : true;
+        const ivaCheckbox = document.getElementById('id_iva_incluido');
+        const ivaIncluido = ivaCheckbox ? ivaCheckbox.checked : true;
         const ivaImporte = ivaIncluido ? 0 : subtotal * 0.21;
         const totalFinal = subtotal + ivaImporte;
 
@@ -271,42 +265,62 @@ document.addEventListener('DOMContentLoaded', function() {
                 ivaDisplay.parentElement.style.opacity = '1';
             }
         }
-
         const totalDisplay = document.getElementById('total-general');
-        if (totalDisplay) {
-            totalDisplay.textContent = totalFinal.toFixed(2);
-        }
+        if (totalDisplay) totalDisplay.textContent = totalFinal.toFixed(2);
     }
 
-    if (addButton) {
-        addButton.addEventListener('click', function() {
-            const forms = formsetContainer.querySelectorAll('.formset-form');
-            let hiddenForm = null;
-            for (let f of forms) {
-                if (f.style.display === 'none') {
-                    hiddenForm = f;
-                    break;
-                }
-            }
-            if (hiddenForm) {
-                hiddenForm.style.display = '';
-                const visibleForms = formsetContainer.querySelectorAll('.formset-form:not([style*="display: none"])');
-                hiddenForm.querySelector('.item-number').textContent = visibleForms.length;
-            }
+    function updateItemNumbers() {
+        let counter = 1;
+        formsetContainer.querySelectorAll('.formset-form').forEach(function(form) {
+            const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
+            if (deleteCheckbox && deleteCheckbox.checked) return;
+            if (form.style.display === 'none') return;
+            const span = form.querySelector('.item-number');
+            if (span) span.textContent = counter++;
         });
     }
 
+    // Remove button: for existing items set DELETE checkbox; for new items just hide
     formsetContainer.addEventListener('click', function(e) {
-        if (e.target.closest('.remove-form')) {
-            const formDiv = e.target.closest('.formset-form');
+        const btn = e.target.closest('.remove-form');
+        if (!btn) return;
+
+        const formDiv = btn.closest('.formset-form');
+        const deleteCheckbox = formDiv.querySelector('input[name$="-DELETE"]');
+        const idField = formDiv.querySelector('input[name$="-id"]');
+        const isExisting = idField && idField.value;
+
+        if (isExisting && deleteCheckbox) {
+            // Mark existing item for deletion via Django's can_delete mechanism
+            deleteCheckbox.checked = true;
             formDiv.style.display = 'none';
-            const selects = formDiv.querySelectorAll('select');
-            selects.forEach(s => s.value = '');
-            const inputs = formDiv.querySelectorAll('input:not([type="hidden"])');
-            inputs.forEach(i => i.value = '');
-            calculateTotals();
+        } else {
+            // Extra (new) form: just hide and clear
+            formDiv.style.display = 'none';
+            formDiv.querySelectorAll('select').forEach(s => s.value = '');
+            formDiv.querySelectorAll('input:not([type="hidden"])').forEach(i => i.value = '');
         }
+
+        updateItemNumbers();
+        calculateTotals();
     });
+
+    // Add button: reveal next hidden extra form
+    if (addButton) {
+        addButton.addEventListener('click', function() {
+            const forms = formsetContainer.querySelectorAll('.formset-form');
+            for (let f of forms) {
+                if (f.style.display === 'none') {
+                    const deleteCheckbox = f.querySelector('input[name$="-DELETE"]');
+                    // Don't reveal forms already marked for deletion
+                    if (deleteCheckbox && deleteCheckbox.checked) continue;
+                    f.style.display = '';
+                    updateItemNumbers();
+                    break;
+                }
+            }
+        });
+    }
 
     formsetContainer.addEventListener('input', calculateTotals);
     const manoObraInput = document.getElementById('id_costo_mano_obra_total');
@@ -315,6 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (ivaCheckbox) ivaCheckbox.addEventListener('change', calculateTotals);
 
     calculateTotals();
+    updateItemNumbers();
 });
 </script>
 {% endblock %}
