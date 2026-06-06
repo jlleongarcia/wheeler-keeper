@@ -1,5 +1,5 @@
 # Wheeler Keeper - Makefile para gestión del proyecto
-.PHONY: help build up down restart logs shell migrate makemigrations createsuperuser loaddata clean stop start status
+.PHONY: help build up down restart logs shell migrate makemigrations createsuperuser loaddata clean stop start status install-cron uninstall-cron
 
 # Variables
 COMPOSE_FILE = docker-compose.yml
@@ -36,6 +36,8 @@ help: ## Muestra esta ayuda
 	@echo "$(YELLOW)🔧 Utilidades:$(NC)"
 	@echo "  $(YELLOW)health$(NC)            - Verificar estado de servicios"
 	@echo "  $(YELLOW)backup-db$(NC)         - Hacer backup de la base de datos"
+	@echo "  $(YELLOW)install-cron$(NC)      - Registrar backup semanal (domingos 8:00)"
+	@echo "  $(YELLOW)uninstall-cron$(NC)    - Eliminar backup semanal del cron"
 	@echo "  $(YELLOW)clean-all$(NC)         - Limpiar todo (⚠️ PELIGROSO)"
 	@echo ""
 	@echo "$(GREEN)Para ver todos los comandos: grep '^[a-zA-Z_-]*:.*##' Makefile$(NC)"
@@ -111,6 +113,24 @@ createsuperuser: ## Crea un superusuario
 loaddata: ## Carga los tipos de mantenimiento
 	@echo "$(GREEN)📦 Cargando tipos de mantenimiento...$(NC)"
 	docker-compose exec $(WEB_SERVICE) python manage.py load_maintenance_types
+
+install-cron: ## Registra el backup semanal automático (domingos 8:00)
+	@CRON_JOB="0 8 * * 0 $(CURDIR)/backup-cron.sh >> $(CURDIR)/backups/backup.log 2>&1"; \
+	if crontab -l 2>/dev/null | grep -qF "backup-cron.sh"; then \
+		echo "$(YELLOW)ℹ️  El cron job ya estaba registrado:$(NC)"; \
+		crontab -l | grep "backup-cron.sh"; \
+	else \
+		(crontab -l 2>/dev/null; echo "# Wheeler Keeper - weekly DB backup (Sunday 8:00 AM)"; echo "$$CRON_JOB") | crontab -; \
+		echo "$(GREEN)✅ Cron job registrado: domingos a las 8:00$(NC)"; \
+	fi
+
+uninstall-cron: ## Elimina el backup semanal del cron
+	@if crontab -l 2>/dev/null | grep -qF "backup-cron.sh"; then \
+		crontab -l | grep -vF "backup-cron.sh" | grep -vF "Wheeler Keeper - weekly" | crontab -; \
+		echo "$(GREEN)✅ Cron job eliminado$(NC)"; \
+	else \
+		echo "$(YELLOW)ℹ️  No había ningún cron job registrado$(NC)"; \
+	fi
 
 backup-db: ## Hace backup de la base de datos
 	@echo "$(GREEN)💾 Creando backup de la base de datos...$(NC)"
@@ -227,10 +247,11 @@ install: ## Primera instalación del proyecto
 	@echo "   ⚙️  Admin: http://localhost:8200/admin"
 	@echo ""
 	@echo "$(YELLOW)🔧 Comandos útiles:$(NC)"
-	@echo "   make quick-start  - Inicio rápido"
+	@echo "   make quick-start    - Inicio rápido"
 	@echo "   make createsuperuser - Crear usuario administrador"
-	@echo "   make logs        - Ver logs"
-	@echo "   make help        - Ver todos los comandos"
+	@echo "   make install-cron   - Activar backup semanal automático"
+	@echo "   make logs           - Ver logs"
+	@echo "   make help           - Ver todos los comandos"
 
 first-time-setup: ## Configuración completa para primera vez (config + install)
 	@echo "$(GREEN)🚀 Configuración inicial completa$(NC)"

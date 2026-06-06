@@ -182,6 +182,9 @@ Los datos están físicamente en: `/var/lib/docker/volumes/wheeler-keeper_postgr
 
 ### Hacer Backup
 ```bash
+# Registrar backup automático semanal (domingos 8:00)
+make install-cron
+
 # Crear backup manual
 ./backup-cron.sh
 ```
@@ -192,6 +195,8 @@ El script:
 - ✅ Mantiene los últimos 10 backups
 - ✅ Guarda los backups en `./backups/`
 - ✅ Se ejecuta automáticamente cada domingo a las 8:00 (cron job)
+
+Para eliminar el backup automático: `make uninstall-cron`
 
 ### Restaurar Backup
 ```bash
