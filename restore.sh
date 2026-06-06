@@ -49,7 +49,7 @@ fi
 
 # Parar la aplicación web temporalmente
 echo -e "${YELLOW}⏸️  Parando aplicación web...${NC}"
-docker-compose stop web
+docker-compose stop wheeler-keeper
 
 # Descomprimir y restaurar
 echo -e "${YELLOW}📦 Restaurando backup...${NC}"
@@ -64,7 +64,7 @@ fi
 
 # Reiniciar la aplicación web
 echo -e "${YELLOW}▶️  Reiniciando aplicación web...${NC}"
-docker-compose start web
+docker-compose start wheeler-keeper
 
 echo -e "${GREEN}✅ ¡Restauración completada exitosamente!${NC}"
 echo -e "${GREEN}🌐 La aplicación está disponible en: http://localhost:8200${NC}"
