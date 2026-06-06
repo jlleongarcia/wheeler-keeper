@@ -309,13 +309,13 @@ docker-compose up -d db
 sleep 15
 
 # 4. Run migrations
-docker-compose run --rm web python manage.py migrate
+docker-compose run --rm wheeler-keeper python manage.py migrate
 
 # 5. Load maintenance types
-docker-compose run --rm web python manage.py load_maintenance_types
+docker-compose run --rm wheeler-keeper python manage.py load_maintenance_types
 
 # 6. Start web application
-docker-compose up -d web
+docker-compose up -d wheeler-keeper
 ```
 
 #### 🏥 If you still have problems
@@ -328,17 +328,17 @@ make status  # with Make
 
 ##### View detailed logs
 ```bash
-docker-compose logs db      # PostgreSQL logs
-docker-compose logs web     # Django logs
-make logs                   # with Make
+docker-compose logs db                 # PostgreSQL logs
+docker-compose logs wheeler-keeper     # Django logs
+make logs                              # with Make
 ```
 
 ##### Complete restart
 ```bash
-docker-compose down -v      # Stop everything
-docker-compose up -d db     # Only DB
-sleep 15                    # Wait
-docker-compose up -d web    # Application
+docker-compose down -v                 # Stop everything
+docker-compose up -d db                # Only DB
+sleep 15                               # Wait
+docker-compose up -d wheeler-keeper    # Application
 ```
 
 ##### Clean completely (last resort)
