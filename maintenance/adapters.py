@@ -49,7 +49,7 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
         email = sociallogin.account.extra_data.get('email')
         if not email:
             messages.error(request, 'No se pudo obtener el email de tu cuenta de Google.')
-            raise ImmediateHttpResponse(redirect(reverse('account_login')))
+            raise ImmediateHttpResponse(redirect(reverse('login')))
         
         # Verificar si ya existe una solicitud pendiente para este email
         existing_request = UserRegistrationRequest.objects.filter(
@@ -77,7 +77,7 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
                 f'La solicitud para {email} fue previamente rechazada. '
                 'Por favor, contacta con el administrador.'
             )
-            raise ImmediateHttpResponse(redirect(reverse('account_login')))
+            raise ImmediateHttpResponse(redirect(reverse('login')))
     
     def save_user(self, request, sociallogin, form=None):
         """

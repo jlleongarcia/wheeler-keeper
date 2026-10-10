@@ -4,7 +4,11 @@ Management command para configurar automáticamente Google OAuth
 
 from django.core.management.base import BaseCommand
 from django.contrib.sites.models import Site
+from django.conf import settings
 from allauth.socialaccount.models import SocialApp
+
+# allauth está montado en /oauth/ (ver wheeler_keeper/urls.py)
+CALLBACK_URL = 'https://wheeler-keeper.box2overtake.com/oauth/google/login/callback/'
 
 
 class Command(BaseCommand):
@@ -31,12 +35,13 @@ class Command(BaseCommand):
             )
 
         # Crear o actualizar la aplicación social de Google
+        # Las credenciales vienen de .env; si faltan, se usan valores temporales
         google_app, created = SocialApp.objects.get_or_create(
             provider='google',
             defaults={
                 'name': 'Google OAuth Wheeler Keeper',
-                'client_id': 'temp_client_id_replace_with_real',
-                'secret': 'temp_secret_replace_with_real',
+                'client_id': settings.GOOGLE_OAUTH_CLIENT_ID or 'temp_client_id_replace_with_real',
+                'secret': settings.GOOGLE_OAUTH_CLIENT_SECRET or 'temp_secret_replace_with_real',
             }
         )
         
@@ -56,17 +61,16 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('CONFIGURACIÓN COMPLETADA'))
         self.stdout.write('='*60)
         self.stdout.write('\n📋 PRÓXIMOS PASOS:')
-        self.stdout.write('\n1. Ve al admin: http://wheeler-keeper.box2overtake.com/admin/')
-        self.stdout.write('2. Ve a Social Applications > Google OAuth Wheeler Keeper')
-        self.stdout.write('3. Reemplaza los valores temporales con:')
-        self.stdout.write('   - Client ID: El que obtengas de Google Cloud Console')
-        self.stdout.write('   - Secret key: El que obtengas de Google Cloud Console')
-        self.stdout.write('\n4. Para obtener las credenciales de Google:')
+        self.stdout.write('\n1. Obtén las credenciales de Google:')
         self.stdout.write('   - Ve a: https://console.cloud.google.com/')
         self.stdout.write('   - Crea/selecciona un proyecto')
-        self.stdout.write('   - Habilita Google+ API')
-        self.stdout.write('   - Ve a Credenciales > Crear credenciales > OAuth 2.0')
-        self.stdout.write('   - URI de redirección: http://wheeler-keeper.box2overtake.com/accounts/google/login/callback/')
+        self.stdout.write('   - Configura la pantalla de consentimiento OAuth')
+        self.stdout.write('   - Ve a Credenciales > Crear credenciales > ID de cliente OAuth 2.0 (Aplicación web)')
+        self.stdout.write(f'   - URI de redirección autorizado: {CALLBACK_URL}')
+        self.stdout.write('\n2. Añádelas a .env:')
+        self.stdout.write('   - GOOGLE_OAUTH_CLIENT_ID=xxx-yyy.apps.googleusercontent.com')
+        self.stdout.write('   - GOOGLE_OAUTH_CLIENT_SECRET=GOCSPX-xxxxxxxxxx')
+        self.stdout.write('\n3. Sincronízalas con la BD: python manage.py set_google_credentials')
         self.stdout.write('\n💡 MIENTRAS TANTO:')
         self.stdout.write('   - La aplicación funcionará normalmente')
         self.stdout.write('   - Los botones de Google estarán visibles')

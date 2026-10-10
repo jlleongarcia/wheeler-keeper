@@ -204,7 +204,7 @@ ACCOUNT_LOGIN_ON_PASSWORD_RESET = False
 SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
 SOCIALACCOUNT_QUERY_EMAIL = True
-SOCIALACCOUNT_STORE_TOKENS = True
+SOCIALACCOUNT_STORE_TOKENS = False  # Solo usamos Google para identificar al usuario, no para llamar a sus APIs
 
 # Configuración específica para Google
 SOCIALACCOUNT_PROVIDERS = {
@@ -224,6 +224,7 @@ SOCIALACCOUNT_PROVIDERS = {
 SOCIALACCOUNT_ADAPTER = 'maintenance.adapters.SocialAccountAdapter'
 ACCOUNT_ADAPTER = 'maintenance.adapters.AccountAdapter'
 
-# Google OAuth credentials (configurar en producción)
+# Google OAuth credentials: fuente de verdad en .env, se sincronizan a la BD (SocialApp)
+# con: python manage.py set_google_credentials
 GOOGLE_OAUTH_CLIENT_ID = config('GOOGLE_OAUTH_CLIENT_ID', default='')
 GOOGLE_OAUTH_CLIENT_SECRET = config('GOOGLE_OAUTH_CLIENT_SECRET', default='')
