@@ -1,9 +1,17 @@
 name: CI/CD Build MultiArch
 on:
-  # push:
-  #   branches:
-  #     - main
+  # Merged PRs land as a push to main, so this covers both
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
   workflow_dispatch:
+
+# Only build the newest commit if several pushes arrive close together
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-push:
@@ -11,27 +19,40 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v1
+      uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      uses: docker/setup-buildx-action@v3
 
     - name: Login to GitHub Container Registry
-      uses: docker/login-action@v1
+      uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.CICD_TOKEN_WHEELER_KEEPER }}
 
+    # main -> latest + sha-<short>; git tag v1.6.0 -> 1.6.0 + 1.6
+    - name: Extract image tags
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/jlleongarcia/wheeler-keeper
+        tags: |
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=sha
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+
     - name: Build and push Docker image
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v6
       with:
         context: .
         push: true
         platforms: linux/amd64,linux/arm64
-        tags: |
-          ghcr.io/jlleongarcia/wheeler-keeper:v1.5
-          ghcr.io/jlleongarcia/wheeler-keeper:latest
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max

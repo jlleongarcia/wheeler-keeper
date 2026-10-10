@@ -269,6 +269,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (totalDisplay) totalDisplay.textContent = totalFinal.toFixed(2);
     }
 
+    // Hidden forms (unused extras or items marked for deletion) must not carry
+    // the HTML5 'required' attribute, otherwise the browser silently blocks submit
+    function syncRequiredFields() {
+        formsetContainer.querySelectorAll('.formset-form').forEach(function(form) {
+            const isVisible = form.style.display !== 'none';
+            form.querySelectorAll('select[name$="-tipo_mantenimiento"], input[name$="-costo_unitario"]').forEach(function(field) {
+                if (isVisible) {
+                    field.setAttribute('required', '');
+                } else {
+                    field.removeAttribute('required');
+                }
+            });
+        });
+    }
+
     function updateItemNumbers() {
         let counter = 1;
         formsetContainer.querySelectorAll('.formset-form').forEach(function(form) {
@@ -295,12 +310,14 @@ document.addEventListener('DOMContentLoaded', function() {
             deleteCheckbox.checked = true;
             formDiv.style.display = 'none';
         } else {
-            // Extra (new) form: just hide and clear
+            // Extra (new) form: hide and restore its initial values so Django
+            // treats it as an untouched extra form and skips it
             formDiv.style.display = 'none';
             formDiv.querySelectorAll('select').forEach(s => s.value = '');
-            formDiv.querySelectorAll('input:not([type="hidden"])').forEach(i => i.value = '');
+            formDiv.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"])').forEach(i => i.value = i.defaultValue);
         }
 
+        syncRequiredFields();
         updateItemNumbers();
         calculateTotals();
     });
@@ -315,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Don't reveal forms already marked for deletion
                     if (deleteCheckbox && deleteCheckbox.checked) continue;
                     f.style.display = '';
+                    syncRequiredFields();
                     updateItemNumbers();
                     break;
                 }
@@ -328,6 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const ivaCheckbox = document.getElementById('id_iva_incluido');
     if (ivaCheckbox) ivaCheckbox.addEventListener('change', calculateTotals);
 
+    syncRequiredFields();
     calculateTotals();
     updateItemNumbers();
 });
