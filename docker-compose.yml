@@ -9,7 +9,7 @@ services:
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
-    restart: unless-stopped
+    restart: always
     ports:
       - "8200:8000"
     depends_on:
@@ -21,7 +21,7 @@ services:
 
   db:
     image: postgres:16
-    restart: unless-stopped
+    restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
